@@ -1,52 +1,65 @@
 import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  ScrollView,
-  StyleSheet,
-  TouchableOpacity,
-} from 'react-native';
-import { Colors, Typography } from '../theme';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors } from '../theme';
 
 type Category = 'tiers' | 'voices' | 'boosts';
 
 const TIERS = [
   {
-    name: 'Starter',
+    name: 'Freshman',
     price: 'Free',
-    color: Colors.steel,
     current: true,
-    features: ['Plan up to 6 hours/day', 'Morning & Evening Flow', '7-day streak tracking', 'Basic check-ins'],
+    gradient: ['rgba(60,79,101,0.3)', 'rgba(60,79,101,0.1)'] as [string, string],
+    borderColor: Colors.steel,
+    labelColor: Colors.muted,
+    features: ['Plan up to 6 hours/day', 'Morning & Evening Flow', '7-day streak tracking', 'Basic hourly check-ins'],
   },
   {
-    name: 'Sovereign',
+    name: 'Varsity',
     price: '$12/mo',
-    color: Colors.molten,
     current: false,
+    gradient: ['rgba(255,94,26,0.2)', 'rgba(255,94,26,0.05)'] as [string, string],
+    borderColor: Colors.molten,
+    labelColor: Colors.molten,
     features: ['Full 24-hour planning', 'AI co-pilot suggestions', 'Unlimited streak tracking', 'Encrypted reflection log', 'Full analytics dashboard', 'Referral bonuses'],
   },
   {
-    name: 'Elite',
+    name: 'Crucible',
     price: '$29/mo',
-    color: Colors.gold,
     current: false,
-    features: ['Everything in Sovereign', 'Advanced AI pattern detection', 'Weekly + Monthly reports', 'Community groups access', 'Premium voice packs', '30% OFF voice packs'],
+    gradient: ['rgba(255,179,0,0.2)', 'rgba(255,179,0,0.05)'] as [string, string],
+    borderColor: Colors.gold,
+    labelColor: Colors.gold,
+    features: ['Everything in Varsity', 'Advanced AI pattern detection', 'Weekly + Monthly reports', 'Community groups access', 'Premium voice packs', '30% OFF voice packs'],
   },
   {
-    name: 'Elite+',
+    name: 'Elite',
     price: 'Earned',
-    color: Colors.white,
     current: false,
     locked: true,
-    features: ['Everything in Elite', 'Host groups & cohorts', 'Group stats dashboard', 'Cannot be purchased', 'Requires sustained discipline'],
+    gradient: ['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)'] as [string, string],
+    borderColor: 'rgba(255,255,255,0.15)',
+    labelColor: 'rgba(255,255,255,0.5)',
+    features: ['Everything in Crucible', 'Host groups & cohorts', 'Group stats dashboard', 'Cannot be purchased', 'Requires sustained discipline'],
+  },
+  {
+    name: 'Legendary',
+    price: 'Earned',
+    current: false,
+    locked: true,
+    gradient: ['rgba(255,179,0,0.1)', 'rgba(255,94,26,0.05)'] as [string, string],
+    borderColor: 'rgba(255,179,0,0.2)',
+    labelColor: 'rgba(255,179,0,0.5)',
+    features: ['Everything in Elite', 'Invite-only legacy systems', 'Stewardship recognition', 'Cannot be purchased', 'Earned through legacy'],
   },
 ];
 
 const VOICES = [
-  { name: 'The Sovereign', tagline: 'Commanding. Measured. Inevitable.', tier: 'Elite', preview: '🎙' },
-  { name: 'The Architect', tagline: 'Systems. Structure. Execution.', tier: 'Elite', preview: '🎙' },
-  { name: 'The Disruptor', tagline: 'Raw. Direct. No filter.', tier: 'Elite', preview: '🎙' },
-  { name: 'The Scholar', tagline: 'Calm. Precise. Enlightened.', tier: 'Sovereign', preview: '🎙' },
+  { name: 'The Sovereign', tagline: 'Commanding. Measured. Inevitable.', tier: 'Crucible' },
+  { name: 'The Architect', tagline: 'Systems. Structure. Execution.', tier: 'Crucible' },
+  { name: 'The Disruptor', tagline: 'Raw. Direct. No filter.', tier: 'Crucible' },
+  { name: 'The Scholar', tagline: 'Calm. Precise. Enlightened.', tier: 'Varsity' },
 ];
 
 const BOOSTS = [
@@ -61,12 +74,10 @@ export default function StoreScreen() {
   return (
     <View style={styles.root}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={[Typography.display, { marginBottom: 6 }]}>Store</Text>
-        <Text style={[Typography.bodyMuted, { marginBottom: 28 }]}>
-          You don't buy status. You earn it.
-        </Text>
+        <Text style={styles.title}>Store</Text>
+        <Text style={styles.subtitle}>You don't buy status. You earn it.</Text>
 
-        {/* Category Tabs */}
+        {/* Tabs */}
         <View style={styles.tabs}>
           {(['tiers', 'voices', 'boosts'] as Category[]).map((c) => (
             <TouchableOpacity
@@ -83,63 +94,59 @@ export default function StoreScreen() {
         </View>
 
         {/* Tiers */}
-        {category === 'tiers' && (
-          <View>
-            {TIERS.map((tier) => (
-              <View
-                key={tier.name}
-                style={[
-                  styles.tierCard,
-                  { borderColor: tier.current ? tier.color : Colors.border },
-                  tier.locked && { opacity: 0.6 },
-                ]}
-              >
-                <View style={styles.tierHeader}>
-                  <View>
-                    <Text style={[Typography.heading2, { color: tier.color }]}>{tier.name}</Text>
-                    <Text style={[Typography.label, { color: Colors.muted, marginTop: 2 }]}>
-                      {tier.locked ? 'EARNED — NOT PURCHASED' : tier.price}
-                    </Text>
-                  </View>
-                  {tier.current ? (
-                    <View style={[styles.badge, { borderColor: tier.color }]}>
-                      <Text style={[styles.badgeText, { color: tier.color }]}>CURRENT</Text>
-                    </View>
-                  ) : tier.locked ? (
-                    <Text style={{ fontSize: 24 }}>🔒</Text>
-                  ) : (
-                    <TouchableOpacity style={[styles.upgradeBtn, { borderColor: tier.color }]} activeOpacity={0.8}>
-                      <Text style={[styles.upgradeBtnText, { color: tier.color }]}>UPGRADE</Text>
-                    </TouchableOpacity>
-                  )}
+        {category === 'tiers' && TIERS.map((tier) => (
+          <View key={tier.name} style={[styles.tierCardWrap, { opacity: tier.locked ? 0.65 : 1 }]}>
+            <LinearGradient colors={tier.gradient} style={[styles.tierCard, { borderColor: tier.borderColor }]}>
+              <View style={styles.tierCardHeader}>
+                <View>
+                  <Text style={[styles.tierName, { color: tier.labelColor }]}>{tier.name}</Text>
+                  <Text style={[styles.tierPrice, { color: tier.locked ? 'rgba(255,255,255,0.3)' : tier.labelColor }]}>
+                    {tier.locked ? 'EARNED — NOT PURCHASED' : tier.price}
+                  </Text>
                 </View>
-                <View style={styles.divider} />
-                {tier.features.map((f, i) => (
-                  <View key={i} style={styles.featureRow}>
-                    <Text style={[styles.checkmark, { color: tier.color }]}>✓</Text>
-                    <Text style={[Typography.body, { flex: 1 }]}>{f}</Text>
+                {tier.current ? (
+                  <View style={[styles.badge, { borderColor: tier.borderColor }]}>
+                    <Text style={[styles.badgeText, { color: tier.labelColor }]}>CURRENT</Text>
                   </View>
-                ))}
+                ) : tier.locked ? (
+                  <Text style={styles.lockIcon}>🔒</Text>
+                ) : (
+                  <TouchableOpacity activeOpacity={0.85}>
+                    <LinearGradient
+                      colors={tier.name === 'Varsity' ? [Colors.molten, '#FF8C4A'] : [Colors.gold, '#FFCA44']}
+                      style={styles.upgradeBtn}
+                    >
+                      <Text style={styles.upgradeBtnText}>UPGRADE</Text>
+                    </LinearGradient>
+                  </TouchableOpacity>
+                )}
               </View>
-            ))}
+              <View style={styles.tierDivider} />
+              {tier.features.map((f, i) => (
+                <View key={i} style={styles.featureRow}>
+                  <Text style={[styles.featureCheck, { color: tier.locked ? 'rgba(255,255,255,0.3)' : tier.labelColor }]}>✓</Text>
+                  <Text style={[styles.featureText, { color: tier.locked ? 'rgba(255,255,255,0.4)' : 'rgba(255,255,255,0.8)' }]}>{f}</Text>
+                </View>
+              ))}
+            </LinearGradient>
           </View>
-        )}
+        ))}
 
-        {/* Voice Packs */}
+        {/* Voices */}
         {category === 'voices' && (
           <View>
-            <View style={styles.lockedNote}>
-              <Text style={[Typography.label, { color: Colors.gold }]}>ELITE TIER REQUIRED</Text>
-              <Text style={[Typography.bodyMuted, { marginTop: 6 }]}>
-                Upgrade to Elite to unlock AI Coach voice packs for your Morning and Evening Flows.
+            <LinearGradient colors={['rgba(255,179,0,0.1)', 'rgba(255,179,0,0.04)']} style={styles.lockedNote}>
+              <Text style={styles.lockedNoteLabel}>CRUCIBLE TIER REQUIRED</Text>
+              <Text style={styles.lockedNoteBody}>
+                Upgrade to Crucible to unlock AI Coach voice packs for your Morning and Evening Flows.
               </Text>
-            </View>
+            </LinearGradient>
             {VOICES.map((v) => (
               <View key={v.name} style={styles.voiceCard}>
-                <Text style={styles.voiceIcon}>{v.preview}</Text>
+                <View style={styles.voiceIcon}><Text style={styles.voiceIconText}>🎙</Text></View>
                 <View style={{ flex: 1 }}>
-                  <Text style={Typography.heading3}>{v.name}</Text>
-                  <Text style={[Typography.bodyMuted, { marginTop: 4, fontSize: 13 }]}>{v.tagline}</Text>
+                  <Text style={styles.voiceName}>{v.name}</Text>
+                  <Text style={styles.voiceTagline}>{v.tagline}</Text>
                 </View>
                 <View style={[styles.badge, { borderColor: Colors.gold }]}>
                   <Text style={[styles.badgeText, { color: Colors.gold }]}>{v.tier.toUpperCase()}</Text>
@@ -152,19 +159,21 @@ export default function StoreScreen() {
         {/* Boosts */}
         {category === 'boosts' && (
           <View>
-            <View style={styles.xpBalanceRow}>
-              <Text style={Typography.bodyMuted}>XP Balance</Text>
-              <Text style={[Typography.heading2, { color: Colors.gold }]}>1,420 XP</Text>
-            </View>
+            <LinearGradient colors={['rgba(255,179,0,0.1)', 'rgba(255,179,0,0.04)']} style={styles.xpBalance}>
+              <Text style={styles.xpBalanceLabel}>XP Balance</Text>
+              <Text style={styles.xpBalanceValue}>1,420 XP</Text>
+            </LinearGradient>
             {BOOSTS.map((b) => (
               <View key={b.name} style={styles.boostCard}>
                 <Text style={styles.boostIcon}>{b.icon}</Text>
                 <View style={{ flex: 1 }}>
-                  <Text style={Typography.heading3}>{b.name}</Text>
-                  <Text style={[Typography.bodyMuted, { marginTop: 4, fontSize: 13 }]}>{b.description}</Text>
+                  <Text style={styles.boostName}>{b.name}</Text>
+                  <Text style={styles.boostDesc}>{b.description}</Text>
                 </View>
-                <TouchableOpacity style={styles.xpBtn} activeOpacity={0.8}>
-                  <Text style={styles.xpBtnText}>{b.cost}</Text>
+                <TouchableOpacity activeOpacity={0.8}>
+                  <LinearGradient colors={['rgba(255,179,0,0.2)', 'rgba(255,179,0,0.08)']} style={styles.xpBtn}>
+                    <Text style={styles.xpBtnText}>{b.cost}</Text>
+                  </LinearGradient>
                 </TouchableOpacity>
               </View>
             ))}
@@ -177,101 +186,94 @@ export default function StoreScreen() {
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: Colors.charcoal },
-  content: { padding: 24, paddingTop: 64, paddingBottom: 40 },
+  content: { padding: 24, paddingTop: 60, paddingBottom: 40 },
+  title: { fontSize: 36, fontWeight: '800', color: Colors.white, marginBottom: 4 },
+  subtitle: { fontSize: 14, color: 'rgba(255,255,255,0.4)', marginBottom: 28 },
+
   tabs: {
     flexDirection: 'row',
     backgroundColor: Colors.slate,
-    borderRadius: 14,
+    borderRadius: 16,
     padding: 4,
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(60,79,101,0.5)',
   },
-  tab: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  tab: { flex: 1, paddingVertical: 11, alignItems: 'center', borderRadius: 12 },
   tabActive: { backgroundColor: Colors.molten },
-  tabText: { fontSize: 13, fontWeight: '600', color: Colors.muted },
-  tabTextActive: { color: Colors.white },
+  tabText: { fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.4)' },
+  tabTextActive: { color: Colors.white, fontWeight: '700' },
 
-  // Tiers
-  tierCard: {
-    backgroundColor: Colors.slate,
-    borderRadius: 20,
-    padding: 24,
-    marginBottom: 16,
-    borderWidth: 1.5,
-  },
-  tierHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
-  badge: {
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  badgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
-  upgradeBtn: {
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-  },
-  upgradeBtnText: { fontSize: 12, fontWeight: '700', letterSpacing: 0.8 },
-  divider: { height: 1, backgroundColor: Colors.faint, marginBottom: 16 },
-  featureRow: { flexDirection: 'row', gap: 12, alignItems: 'flex-start', marginBottom: 8 },
-  checkmark: { fontSize: 14, fontWeight: '800', marginTop: 2 },
+  tierCardWrap: { marginBottom: 14 },
+  tierCard: { borderRadius: 22, padding: 22, borderWidth: 1.5 },
+  tierCardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 16 },
+  tierName: { fontSize: 24, fontWeight: '800', marginBottom: 4 },
+  tierPrice: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5 },
+  badge: { borderWidth: 1.5, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
+  badgeText: { fontSize: 10, fontWeight: '700', letterSpacing: 0.8 },
+  lockIcon: { fontSize: 22 },
+  upgradeBtn: { borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10 },
+  upgradeBtnText: { color: Colors.white, fontSize: 12, fontWeight: '800', letterSpacing: 0.8 },
+  tierDivider: { height: 1, backgroundColor: 'rgba(255,255,255,0.08)', marginBottom: 14 },
+  featureRow: { flexDirection: 'row', gap: 10, marginBottom: 8 },
+  featureCheck: { fontSize: 13, fontWeight: '800', marginTop: 1 },
+  featureText: { fontSize: 13, lineHeight: 19, flex: 1 },
 
-  // Voices
   lockedNote: {
-    backgroundColor: Colors.slate,
     borderRadius: 16,
     padding: 18,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: Colors.gold,
+    borderColor: 'rgba(255,179,0,0.3)',
+    borderLeftWidth: 3,
+    borderLeftColor: Colors.gold,
   },
+  lockedNoteLabel: { fontSize: 10, fontWeight: '700', color: Colors.gold, letterSpacing: 1, marginBottom: 6 },
+  lockedNoteBody: { fontSize: 13, color: 'rgba(255,255,255,0.5)', lineHeight: 19 },
+
   voiceCard: {
     backgroundColor: Colors.slate,
     borderRadius: 18,
-    padding: 20,
-    marginBottom: 12,
+    padding: 18,
+    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(60,79,101,0.4)',
   },
-  voiceIcon: { fontSize: 32 },
+  voiceIcon: { width: 48, height: 48, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.06)', alignItems: 'center', justifyContent: 'center' },
+  voiceIconText: { fontSize: 22 },
+  voiceName: { fontSize: 15, fontWeight: '700', color: Colors.white, marginBottom: 3 },
+  voiceTagline: { fontSize: 12, color: 'rgba(255,255,255,0.4)' },
 
-  // Boosts
-  xpBalanceRow: {
+  xpBalance: {
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: 'rgba(255,179,0,0.3)',
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
-    backgroundColor: Colors.slate,
-    borderRadius: 16,
-    padding: 18,
-    borderWidth: 1,
-    borderColor: Colors.gold,
   },
+  xpBalanceLabel: { fontSize: 13, color: 'rgba(255,255,255,0.5)' },
+  xpBalanceValue: { fontSize: 22, fontWeight: '800', color: Colors.gold },
+
   boostCard: {
     backgroundColor: Colors.slate,
     borderRadius: 18,
-    padding: 20,
-    marginBottom: 12,
+    padding: 18,
+    marginBottom: 10,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: 14,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: 'rgba(60,79,101,0.4)',
   },
   boostIcon: { fontSize: 28 },
-  xpBtn: {
-    backgroundColor: `${Colors.gold}20`,
-    borderWidth: 1.5,
-    borderColor: Colors.gold,
-    borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
+  boostName: { fontSize: 15, fontWeight: '700', color: Colors.white, marginBottom: 3 },
+  boostDesc: { fontSize: 12, color: 'rgba(255,255,255,0.4)', lineHeight: 17 },
+  xpBtn: { borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: 'rgba(255,179,0,0.4)' },
   xpBtnText: { color: Colors.gold, fontSize: 12, fontWeight: '700' },
 });

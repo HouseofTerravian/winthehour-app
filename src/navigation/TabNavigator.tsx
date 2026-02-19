@@ -9,24 +9,26 @@ import MissionsScreen from '../screens/MissionsScreen';
 import StatisticsScreen from '../screens/StatisticsScreen';
 import FlowsScreen from '../screens/FlowsScreen';
 import StoreScreen from '../screens/StoreScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 
-type IconProps = { focused: boolean; color: string };
+// SVG-style unicode icons for each tab
+const ICONS: Record<string, { active: string; inactive: string }> = {
+  Home:       { active: '⬡', inactive: '⬡' },
+  'Check-ins':{ active: '◉', inactive: '◎' },
+  Missions:   { active: '◈', inactive: '◈' },
+  Statistics: { active: '▦', inactive: '▦' },
+  Flows:      { active: '◑', inactive: '◑' },
+  Store:      { active: '◆', inactive: '◇' },
+  Profile:    { active: '●', inactive: '○' },
+};
 
-function TabIcon({ label, focused }: { label: string; focused: boolean }) {
-  const icons: Record<string, string> = {
-    Home: '⬡',
-    'Check-ins': '◎',
-    Missions: '◈',
-    Statistics: '▦',
-    Flows: '◑',
-    Store: '◆',
-  };
+function TabIcon({ name, focused }: { name: string; focused: boolean }) {
   return (
-    <View style={styles.iconWrap}>
-      <Text style={[styles.iconText, { color: focused ? Colors.molten : Colors.steel }]}>
-        {icons[label] ?? '○'}
+    <View style={iconStyles.wrap}>
+      <Text style={[iconStyles.icon, { color: focused ? Colors.molten : 'rgba(255,255,255,0.3)' }]}>
+        {focused ? ICONS[name]?.active : ICONS[name]?.inactive}
       </Text>
     </View>
   );
@@ -39,11 +41,9 @@ export default function TabNavigator() {
         headerShown: false,
         tabBarStyle: styles.tabBar,
         tabBarActiveTintColor: Colors.molten,
-        tabBarInactiveTintColor: Colors.steel,
+        tabBarInactiveTintColor: 'rgba(255,255,255,0.3)',
         tabBarLabelStyle: styles.tabLabel,
-        tabBarIcon: ({ focused }) => (
-          <TabIcon label={route.name} focused={focused} />
-        ),
+        tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
       })}
     >
       <Tab.Screen name="Home" component={HomeScreen} />
@@ -52,6 +52,7 @@ export default function TabNavigator() {
       <Tab.Screen name="Statistics" component={StatisticsScreen} />
       <Tab.Screen name="Flows" component={FlowsScreen} />
       <Tab.Screen name="Store" component={StoreScreen} />
+      <Tab.Screen name="Profile" component={ProfileScreen} />
     </Tab.Navigator>
   );
 }
@@ -60,22 +61,20 @@ const styles = StyleSheet.create({
   tabBar: {
     backgroundColor: Colors.slate,
     borderTopWidth: 1,
-    borderTopColor: Colors.border,
-    height: 72,
-    paddingBottom: 12,
+    borderTopColor: 'rgba(60,79,101,0.5)',
+    height: 76,
+    paddingBottom: 14,
     paddingTop: 8,
   },
   tabLabel: {
-    fontSize: 10,
+    fontSize: 9,
     fontWeight: '600',
     letterSpacing: 0.3,
-    marginTop: 2,
+    marginTop: 1,
   },
-  iconWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconText: {
-    fontSize: 18,
-  },
+});
+
+const iconStyles = StyleSheet.create({
+  wrap: { alignItems: 'center', justifyContent: 'center' },
+  icon: { fontSize: 17 },
 });
