@@ -15,7 +15,7 @@ const WEEKLY_DATA = [
   { day: 'S', won: 0, total: 0 },
 ];
 
-const BAR_MAX = 100;
+const BAR_TRACK_H = 110;
 
 export default function StatisticsScreen() {
   const [range, setRange] = useState<Range>('week');
@@ -72,17 +72,23 @@ export default function StatisticsScreen() {
           <Text style={styles.cardTitle}>Hours Won per Day</Text>
           <View style={styles.chart}>
             {WEEKLY_DATA.map((d, i) => {
-              const fillPct = maxWon > 0 ? (d.won / maxWon) * 100 : 0;
+              const fillH = maxWon > 0 ? Math.round((d.won / maxWon) * BAR_TRACK_H) : 0;
               const ratio = d.total > 0 ? d.won / d.total : 0;
               const barColor = ratio >= 0.75 ? Colors.molten : ratio >= 0.5 ? Colors.gold : Colors.steel;
               return (
                 <View key={i} style={styles.chartCol}>
-                  <Text style={[styles.barNum, { color: d.won > 0 ? Colors.white : Colors.steel }]}>{d.won || ''}</Text>
+                  <Text style={[styles.barNum, { color: d.won > 0 ? Colors.white : 'transparent' }]}>
+                    {d.won}
+                  </Text>
                   <View style={styles.barTrack}>
-                    <LinearGradient
-                      colors={d.won > 0 ? [barColor, `${barColor}80`] : ['transparent', 'transparent']}
-                      style={[styles.barFill, { height: `${fillPct}%` }]}
-                    />
+                    {fillH > 0 && (
+                      <LinearGradient
+                        colors={[barColor, `${barColor}55`]}
+                        start={{ x: 0, y: 0 }}
+                        end={{ x: 0, y: 1 }}
+                        style={{ width: '100%', height: fillH, borderRadius: 8 }}
+                      />
+                    )}
                   </View>
                   <Text style={styles.barLabel}>{d.day}</Text>
                 </View>
@@ -199,18 +205,17 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(60,79,101,0.4)',
   },
   cardTitle: { fontSize: 15, fontWeight: '700', color: Colors.white, marginBottom: 20 },
-  chart: { flexDirection: 'row', alignItems: 'flex-end', height: 120, gap: 6, marginBottom: 12 },
-  chartCol: { flex: 1, alignItems: 'center', gap: 4 },
-  barNum: { fontSize: 11, fontWeight: '700', height: 16 },
+  chart: { flexDirection: 'row', alignItems: 'flex-end', gap: 6, marginBottom: 12 },
+  chartCol: { flex: 1, alignItems: 'center', gap: 6 },
+  barNum: { fontSize: 11, fontWeight: '700', color: Colors.white, height: 16 },
   barTrack: {
-    flex: 1,
     width: '100%',
-    backgroundColor: 'rgba(255,255,255,0.05)',
+    height: BAR_TRACK_H,
+    backgroundColor: 'rgba(255,255,255,0.06)',
     borderRadius: 8,
     overflow: 'hidden',
     justifyContent: 'flex-end',
   },
-  barFill: { width: '100%', borderRadius: 8 },
   barLabel: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.35)' },
   chartLegend: { flexDirection: 'row', gap: 16 },
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
