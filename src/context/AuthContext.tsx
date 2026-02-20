@@ -54,23 +54,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    console.log('[Auth] effect start');
 
     supabase.auth.getSession()
       .then(({ data: { session: s } }) => {
-        console.log('[Auth] getSession resolved, user:', s?.user?.id ?? 'none');
         if (!mounted) return;
         setSession(s);
         setUser(s?.user ?? null);
         if (!s?.user) setLoading(false);
       })
-      .catch((e) => {
-        console.log('[Auth] getSession error:', e);
+      .catch(() => {
         if (mounted) setLoading(false);
       });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
-      console.log('[Auth] onAuthStateChange:', _event, s?.user?.id ?? 'none');
       if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
@@ -81,12 +77,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     const timeout = setTimeout(() => {
-      console.log('[Auth] safety timeout fired, mounted:', mounted);
       if (mounted) setLoading(false);
     }, 5000);
 
     return () => {
-      console.log('[Auth] effect cleanup');
       mounted = false;
       clearTimeout(timeout);
       subscription.unsubscribe();
@@ -95,18 +89,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!user) return;
-    console.log('[Auth] fetching profile for', user.id);
     let active = true;
     fetchProfile(user.id)
-      .then(p => {
-        console.log('[Auth] fetchProfile resolved:', p?.id ?? 'null');
-        if (active) setProfile(p);
-      })
-      .catch(e => console.warn('[Auth] fetchProfile error:', e))
-      .finally(() => {
-        console.log('[Auth] fetchProfile finally, active:', active);
-        if (active) setLoading(false);
-      });
+      .then(p => { if (active) setProfile(p); })
+      .catch(e => console.warn('fetchProfile:', e))
+      .finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [user?.id]);
 
