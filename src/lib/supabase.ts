@@ -21,7 +21,18 @@ if (Platform.OS !== 'web') {
   };
 }
 
-// Bypass the Web Locks API — stale locks from hot reloads cause 10s timeouts in dev
-authOptions.lock = (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => fn();
+// Must run before createClient — Supabase checks navigator.locks in its constructor.
+// Hiding it forces Supabase to use its in-memory mutex instead, which has no stale
+// lock issues on page refresh.
+if (Platform.OS === 'web' && typeof window !== 'undefined') {
+  try {
+    Object.defineProperty(Navigator.prototype, 'locks', {
+      get: () => undefined,
+      configurable: true,
+    });
+  } catch {
+    try { (window.navigator as any).locks = undefined; } catch { /* ignore */ }
+  }
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, { auth: authOptions });

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wth-v1';
+const CACHE_NAME = 'wth-v2';
 const PRECACHE_URLS = ['/', '/index.html', '/icons/icon-192.png', '/icons/icon-512.png'];
 
 self.addEventListener('install', (event) => {
@@ -26,6 +26,9 @@ self.addEventListener('fetch', (event) => {
   if (request.method !== 'GET') return;
   if (url.origin !== self.location.origin) return;
 
+  // Never cache JS or CSS — always fetch fresh so code changes take effect immediately
+  if (url.pathname.endsWith('.js') || url.pathname.endsWith('.css')) return;
+
   // Navigation: network-first, fallback to cached shell
   if (request.mode === 'navigate') {
     event.respondWith(
@@ -40,7 +43,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Assets: cache-first, populate on miss
+  // Static assets (icons, images): cache-first, populate on miss
   event.respondWith(
     caches.match(request).then((cached) => {
       if (cached) return cached;
