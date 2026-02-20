@@ -24,7 +24,28 @@
       "predictiveBackGestureEnabled": false
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "name": "Win The Hour!",
+      "shortName": "WTH",
+      "description": "Command your time. Win your hour.",
+      "themeColor": "#FF5E1A",
+      "backgroundColor": "#0B0C10",
+      "display": "standalone",
+      "startUrl": "/",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png",
+          "purpose": "any maskable"
+        },
+        {
+          "src": "/icons/icon-512.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any maskable"
+        }
+      ]
     }
   }
 }
