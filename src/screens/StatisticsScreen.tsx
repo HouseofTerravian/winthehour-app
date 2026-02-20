@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../theme';
+import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 type Range = 'week' | 'month' | 'all';
 
@@ -17,22 +19,37 @@ const WEEKLY_DATA = [
 
 const BAR_TRACK_H = 110;
 
+const TIER_NEXT: Record<string, { name: string; goal: number }> = {
+  Freshman: { name: 'Varsity',  goal: 2000  },
+  Varsity:  { name: 'Crucible', goal: 10000 },
+};
+
 export default function StatisticsScreen() {
+  const { profile } = useAuth();
+  const { colors, skinFonts } = useTheme();
   const [range, setRange] = useState<Range>('week');
+  const r = (n: number) => Math.round(n * skinFonts.borderRadiusScale);
 
   const totalWon = WEEKLY_DATA.reduce((s, d) => s + d.won, 0);
   const totalLogged = WEEKLY_DATA.reduce((s, d) => s + d.total, 0);
   const winRate = totalLogged > 0 ? Math.round((totalWon / totalLogged) * 100) : 0;
   const maxWon = Math.max(...WEEKLY_DATA.map((d) => d.won), 1);
 
+  const streak = profile?.streak ?? 0;
+  const xp = profile?.xp ?? 0;
+  const tierName = profile?.tier ?? 'Freshman';
+  const nextTier = TIER_NEXT[tierName];
+  const progressPct = nextTier ? Math.min(100, Math.round((xp / nextTier.goal) * 100)) : 100;
+  const xpRemaining = nextTier ? Math.max(0, nextTier.goal - xp) : 0;
+
   return (
-    <View style={styles.root}>
+    <View style={[styles.root, { backgroundColor: colors.charcoal }]}>
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Statistics</Text>
-        <Text style={styles.subtitle}>No opinions. Just data.</Text>
+        <Text style={[styles.title, { color: colors.text1 }]}>Statistics</Text>
+        <Text style={[styles.subtitle, { color: colors.text3 }]}>No opinions. Just data.</Text>
 
         {/* Range Tabs */}
-        <View style={styles.tabs}>
+        <View style={[styles.tabs, { backgroundColor: colors.slate, borderColor: colors.cardBorder }]}>
           {(['week', 'month', 'all'] as Range[]).map((r) => (
             <TouchableOpacity
               key={r}
@@ -58,18 +75,18 @@ export default function StatisticsScreen() {
             <Text style={styles.statMeta}>Win Rate</Text>
           </LinearGradient>
           <LinearGradient colors={['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.02)']} style={styles.statCard}>
-            <Text style={styles.statBig}>0</Text>
-            <Text style={styles.statMeta}>Streak</Text>
+            <Text style={[styles.statBig, { color: colors.text1 }]}>{streak}</Text>
+            <Text style={[styles.statMeta, { color: colors.text3 }]}>Streak</Text>
           </LinearGradient>
           <LinearGradient colors={['rgba(255,179,0,0.1)', 'rgba(255,179,0,0.02)']} style={styles.statCard}>
-            <Text style={[styles.statBig, { color: Colors.gold, fontSize: 26 }]}>0</Text>
+            <Text style={[styles.statBig, { color: Colors.gold, fontSize: 26 }]}>{xp.toLocaleString()}</Text>
             <Text style={styles.statMeta}>Total XP</Text>
           </LinearGradient>
         </View>
 
         {/* Bar Chart */}
-        <View style={styles.chartCard}>
-          <Text style={styles.cardTitle}>Hours Won per Day</Text>
+        <View style={[styles.chartCard, { backgroundColor: colors.slate }]}>
+          <Text style={[styles.cardTitle, { color: colors.text1 }]}>Hours Won per Day</Text>
           <View style={styles.chart}>
             {WEEKLY_DATA.map((d, i) => {
               const fillH = maxWon > 0 ? Math.round((d.won / maxWon) * BAR_TRACK_H) : 0;
@@ -90,7 +107,7 @@ export default function StatisticsScreen() {
                       />
                     )}
                   </View>
-                  <Text style={styles.barLabel}>{d.day}</Text>
+                  <Text style={[styles.barLabel, { color: colors.text4 }]}>{d.day}</Text>
                 </View>
               );
             })}
@@ -98,65 +115,88 @@ export default function StatisticsScreen() {
           <View style={styles.chartLegend}>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.molten }]} />
-              <Text style={styles.legendText}>≥75%</Text>
+              <Text style={[styles.legendText, { color: colors.text4 }]}>≥75%</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.gold }]} />
-              <Text style={styles.legendText}>≥50%</Text>
+              <Text style={[styles.legendText, { color: colors.text4 }]}>≥50%</Text>
             </View>
             <View style={styles.legendItem}>
               <View style={[styles.legendDot, { backgroundColor: Colors.steel }]} />
-              <Text style={styles.legendText}>{'<'}50%</Text>
+              <Text style={[styles.legendText, { color: colors.text4 }]}>{'<'}50%</Text>
             </View>
           </View>
         </View>
 
         {/* Tier Progress */}
-        <View style={styles.tierCard}>
+        <View style={[styles.tierCard, { backgroundColor: colors.slate }]}>
           <View style={styles.tierCardHeader}>
-            <Text style={styles.cardTitle}>Tier Progress</Text>
+            <Text style={[styles.cardTitle, { color: colors.text1 }]}>Tier Progress</Text>
             <View style={styles.tierBadge}>
-              <Text style={styles.tierBadgeText}>FRESHMAN</Text>
+              <Text style={styles.tierBadgeText}>{tierName.toUpperCase()}</Text>
             </View>
           </View>
-          <View style={styles.tierProgressInfo}>
-            <Text style={styles.tierXP}>1,420 XP</Text>
-            <Text style={styles.tierXPGoal}>/ 2,000 to Varsity</Text>
-          </View>
-          <View style={styles.progressTrack}>
-            <LinearGradient
-              colors={[Colors.molten, Colors.gold]}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 0 }}
-              style={[styles.progressFill, { width: '71%' }]}
-            />
-          </View>
-          <Text style={styles.progressNote}>580 XP remaining</Text>
+          {nextTier ? (
+            <>
+              <View style={styles.tierProgressInfo}>
+                <Text style={styles.tierXP}>{xp.toLocaleString()} XP</Text>
+                <Text style={[styles.tierXPGoal, { color: colors.text3 }]}>/ {nextTier.goal.toLocaleString()} to {nextTier.name}</Text>
+              </View>
+              <View style={styles.progressTrack}>
+                <LinearGradient
+                  colors={[Colors.molten, Colors.gold]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                  style={[styles.progressFill, { width: `${progressPct}%` }]}
+                />
+              </View>
+              <Text style={[styles.progressNote, { color: colors.text4 }]}>{xpRemaining.toLocaleString()} XP remaining</Text>
+            </>
+          ) : (
+            <Text style={[styles.progressNote, { color: colors.text4 }]}>Max earned tier achieved</Text>
+          )}
         </View>
 
-        {/* Streak Calendar */}
-        <View style={styles.streakCard}>
-          <Text style={[styles.cardTitle, { marginBottom: 16 }]}>28-Day Activity</Text>
+        {/* Monthly Calendar */}
+        <View style={[styles.streakCard, { backgroundColor: colors.slate }]}>
+          <Text style={[styles.cardTitle, { marginBottom: 4, fontFamily: skinFonts.titleFontFamily, fontWeight: skinFonts.titleFontWeight }]}>
+            This Month at a Glance
+          </Text>
+          <Text style={[styles.monthLabel, { color: colors.text3, fontFamily: skinFonts.fontFamily }]}>
+            {new Date().toLocaleString('default', { month: 'long', year: 'numeric' })}
+          </Text>
           <View style={styles.streakGrid}>
-            {Array.from({ length: 28 }, (_, i) => {
-              const isToday = i === 27;
-              const active = i < 24 ? Math.random() > 0.15 : i < 27;
-              return (
-                <LinearGradient
-                  key={i}
-                  colors={
-                    isToday
-                      ? [Colors.molten, Colors.gold]
-                      : active
-                      ? [`${Colors.molten}50`, `${Colors.molten}20`]
-                      : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']
-                  }
-                  style={[styles.streakDot, isToday && styles.streakDotToday]}
-                />
-              );
-            })}
+            {(() => {
+              const now = new Date();
+              const todayDate = now.getDate();          // 1-indexed
+              const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+              return Array.from({ length: daysInMonth }, (_, i) => {
+                const dayNum = i + 1;                   // 1-indexed, left = day 1
+                const isToday = dayNum === todayDate;
+                const daysAgo = todayDate - dayNum;     // 0 = today, positive = past
+                const active  = daysAgo >= 0 && daysAgo < streak;
+                const isFuture = dayNum > todayDate;
+                return (
+                  <LinearGradient
+                    key={i}
+                    colors={
+                      isToday
+                        ? [Colors.molten, Colors.gold]
+                        : active
+                        ? [`${Colors.molten}50`, `${Colors.molten}20`]
+                        : isFuture
+                        ? ['rgba(255,255,255,0.02)', 'rgba(255,255,255,0.01)']
+                        : ['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.02)']
+                    }
+                    style={[styles.streakDot, isToday && styles.streakDotToday]}
+                  />
+                );
+              });
+            })()}
           </View>
-          <Text style={styles.streakCaption}>Each square = one day · Today is highlighted</Text>
+          <Text style={[styles.streakCaption, { fontFamily: skinFonts.fontFamily, color: colors.text4 }]}>
+            Day 1 on the left · Today highlighted in orange
+          </Text>
         </View>
       </ScrollView>
     </View>
@@ -253,6 +293,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(60,79,101,0.4)',
   },
+  monthLabel: { fontSize: 12, marginBottom: 14 },
   streakGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginBottom: 12 },
   streakDot: { width: 30, height: 30, borderRadius: 8 },
   streakDotToday: { transform: [{ scale: 1.15 }] },

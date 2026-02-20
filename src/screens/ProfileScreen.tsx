@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,6 +13,11 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../theme';
 import { useAuth } from '../context/AuthContext';
+import { useTheme, SKINS, type Skin } from '../context/ThemeContext';
+import {
+  loadUnavailableHours,
+  saveUnavailableHours,
+} from '../lib/checkins';
 
 type DraftProfile = {
   displayName: string;
@@ -50,12 +55,27 @@ function profileToDraft(profile: ReturnType<typeof useAuth>['profile']): DraftPr
   };
 }
 
+function formatHourShort(h: number) {
+  if (h === 0) return '12A';
+  if (h === 12) return '12P';
+  return h < 12 ? `${h}A` : `${h - 12}P`;
+}
+
 export default function ProfileScreen() {
   const { profile, updateProfile, signOut } = useAuth();
+  const {
+    colors, skinFonts, isDark, toggleDarkMode,
+    skin, setSkin, aiName, setAiName,
+    locationEnabled, toggleLocation,
+  } = useTheme();
+  const r = (n: number) => Math.round(n * skinFonts.borderRadiusScale);
+
   const [editing, setEditing] = useState(false);
+  const [aiNameDraft, setAiNameDraft] = useState(aiName);
   const [draft, setDraft] = useState<DraftProfile>(() => profileToDraft(profile));
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [unavailableHours, setUnavailableHours] = useState<number[]>([]);
 
   // Seed draft when profile first loads from context
   useEffect(() => {
@@ -63,6 +83,21 @@ export default function ProfileScreen() {
       setDraft(profileToDraft(profile));
     }
   }, [profile]);
+
+  const loadUnav = useCallback(async () => {
+    const hours = await loadUnavailableHours();
+    setUnavailableHours(hours);
+  }, []);
+
+  useEffect(() => { loadUnav(); }, [loadUnav]);
+
+  async function toggleUnavailableHour(hour: number) {
+    const updated = unavailableHours.includes(hour)
+      ? unavailableHours.filter((h) => h !== hour)
+      : [...unavailableHours, hour].sort((a, b) => a - b);
+    setUnavailableHours(updated);
+    await saveUnavailableHours(updated);
+  }
 
   function startEdit() {
     setDraft(profileToDraft(profile));
@@ -284,6 +319,152 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* ── Appearance ── */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { marginBottom: 14 }]}>Appearance</Text>
+
+          {/* Light Mode */}
+          <View style={[styles.prefRow, { borderBottomColor: 'rgba(255,255,255,0.06)' }]}>
+            <View>
+              <Text style={styles.prefLabel}>Light Mode</Text>
+              <Text style={styles.prefSub}>Switch between dark and light theme</Text>
+            </View>
+            <Switch
+              value={!isDark}
+              onValueChange={toggleDarkMode}
+              trackColor={{ false: Colors.steel, true: Colors.gold }}
+              thumbColor={Colors.white}
+            />
+          </View>
+
+          {/* App Skin */}
+          <Text style={[styles.prefLabel, { marginTop: 14, marginBottom: 10 }]}>App Skin</Text>
+          <View style={styles.chipGrid}>
+            {(['default', 'student', 'athletic', 'professional'] as Skin[]).map((s) => {
+              const isActive = skin === s;
+              const sf = SKINS[s];
+              return (
+                <TouchableOpacity
+                  key={s}
+                  style={[
+                    styles.skinCard,
+                    isActive && styles.skinCardActive,
+                    { borderRadius: r(14), borderColor: isActive ? Colors.molten : 'rgba(60,79,101,0.5)' },
+                  ]}
+                  onPress={() => setSkin(s)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.skinCardTitle,
+                      { fontFamily: sf.titleFontFamily, fontWeight: sf.titleFontWeight, letterSpacing: sf.titleLetterSpacing * 0.5 },
+                      isActive && { color: Colors.molten },
+                    ]}
+                  >
+                    {sf.skinLabel}
+                  </Text>
+                  <Text style={[styles.skinCardSub, isActive && { color: 'rgba(255,94,26,0.7)' }]}>
+                    {s === 'default' ? 'System font' : s === 'student' ? 'Serif · Rounded' : s === 'athletic' ? 'Condensed · Bold' : 'Helvetica · Clean'}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
+
+        {/* ── A.I. Assistant (Premium) ── */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>A.I. Assistant</Text>
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+            </View>
+          </View>
+          <Text style={[styles.prefSub, { marginBottom: 12 }]}>
+            Name your personal AI coach. Available on Varsity and above.
+          </Text>
+          <View style={[styles.aiNameRow, { borderColor: 'rgba(60,79,101,0.5)', borderRadius: r(12) }]}>
+            <TextInput
+              style={styles.aiNameInput}
+              value={aiNameDraft}
+              onChangeText={setAiNameDraft}
+              placeholder="e.g. Atlas, Sage, Cipher…"
+              placeholderTextColor="rgba(255,255,255,0.25)"
+              editable={profile?.tier !== 'Freshman'}
+            />
+            <TouchableOpacity
+              style={[styles.aiNameSaveBtn, { opacity: profile?.tier === 'Freshman' ? 0.4 : 1, borderRadius: r(8) }]}
+              onPress={() => setAiName(aiNameDraft)}
+              disabled={profile?.tier === 'Freshman'}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.aiNameSaveBtnText}>SAVE</Text>
+            </TouchableOpacity>
+          </View>
+          {profile?.tier === 'Freshman' && (
+            <Text style={styles.premiumNote}>Upgrade to Varsity to unlock AI naming.</Text>
+          )}
+        </View>
+
+        {/* ── Location ── */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { marginBottom: 14 }]}>Location</Text>
+          <View style={[styles.prefRow, { borderBottomWidth: 0 }]}>
+            <View style={{ flex: 1, paddingRight: 16 }}>
+              <Text style={styles.prefLabel}>Location-Based Planning</Text>
+              <Text style={styles.prefSub}>
+                Some users prefer location-based planning of their day. When near certain critical locations
+                (Business District, Student Union, Convenience Store, etc.), reminders and alerts can be sent.
+                On our upgraded plan, your A.I. can also suggest where and when to get things done.
+              </Text>
+            </View>
+            <Switch
+              value={locationEnabled}
+              onValueChange={toggleLocation}
+              trackColor={{ false: Colors.steel, true: Colors.molten }}
+              thumbColor={Colors.white}
+            />
+          </View>
+        </View>
+
+        {/* Unavailable Hours */}
+        <View style={styles.section}>
+          <Text style={[styles.sectionTitle, { marginBottom: 6 }]}>Unavailable Hours</Text>
+          <Text style={styles.unavailableSubtitle}>
+            Tap hours you're asleep, commuting, or otherwise off-limits.
+            WTH! will mark these as unavailable instead of prompting you.
+          </Text>
+          <View style={styles.hourGrid}>
+            {Array.from({ length: 24 }, (_, h) => {
+              const active = unavailableHours.includes(h);
+              return (
+                <TouchableOpacity
+                  key={h}
+                  style={[styles.hourChip, active && styles.hourChipActive]}
+                  onPress={() => toggleUnavailableHour(h)}
+                  activeOpacity={0.75}
+                >
+                  <Text style={[styles.hourChipText, active && styles.hourChipTextActive]}>
+                    {formatHourShort(h)}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          {unavailableHours.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearHoursBtn}
+              onPress={async () => {
+                setUnavailableHours([]);
+                await saveUnavailableHours([]);
+              }}
+              activeOpacity={0.75}
+            >
+              <Text style={styles.clearHoursBtnText}>Clear all</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         {/* Sign Out */}
         <TouchableOpacity style={styles.signOutBtn} onPress={signOut} activeOpacity={0.75}>
           <Text style={styles.signOutBtnText}>Sign Out</Text>
@@ -472,7 +653,7 @@ const styles = StyleSheet.create({
   },
   errorText: { color: '#FF6060', fontSize: 13, fontWeight: '500' },
 
-  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between' },
   chip: {
     paddingHorizontal: 14,
     paddingVertical: 8,
@@ -495,6 +676,88 @@ const styles = StyleSheet.create({
   },
   prefLabel: { fontSize: 15, fontWeight: '600', color: Colors.white, marginBottom: 3 },
   prefSub: { fontSize: 12, color: Colors.muted },
+
+  // Skin selector
+  skinCard: {
+    width: '47%',
+    padding: 14,
+    borderWidth: 1,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    marginBottom: 8,
+  },
+  skinCardActive: {
+    backgroundColor: 'rgba(255,94,26,0.1)',
+  },
+  skinCardTitle: { fontSize: 15, color: Colors.white, marginBottom: 4 },
+  skinCardSub:   { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+
+  // Premium badge
+  premiumBadge: {
+    borderWidth: 1.5,
+    borderColor: Colors.gold,
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  premiumBadgeText: { fontSize: 10, fontWeight: '800', color: Colors.gold, letterSpacing: 0.8 },
+  premiumNote:      { fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 8 },
+
+  // AI Name
+  aiNameRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    gap: 10,
+  },
+  aiNameInput:       { flex: 1, color: Colors.white, fontSize: 15 },
+  aiNameSaveBtn:     { backgroundColor: Colors.molten, paddingHorizontal: 14, paddingVertical: 8 },
+  aiNameSaveBtnText: { color: Colors.white, fontSize: 11, fontWeight: '800', letterSpacing: 0.8 },
+
+  unavailableSubtitle: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.4)',
+    lineHeight: 18,
+    marginBottom: 16,
+  },
+  hourGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  hourChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(60,79,101,0.6)',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    minWidth: 46,
+    alignItems: 'center',
+  },
+  hourChipActive: {
+    backgroundColor: 'rgba(255,94,26,0.12)',
+    borderColor: Colors.molten,
+  },
+  hourChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.4)',
+  },
+  hourChipTextActive: {
+    color: Colors.molten,
+  },
+  clearHoursBtn: {
+    marginTop: 12,
+    alignSelf: 'flex-end',
+  },
+  clearHoursBtnText: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.3)',
+    fontWeight: '600',
+  },
 
   signOutBtn: {
     borderWidth: 1.5,

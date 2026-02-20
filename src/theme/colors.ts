@@ -1,3 +1,4 @@
+// Dark theme — used by legacy screen imports and as the base
 export const Colors = {
   charcoal: '#0B0C10',
   slate: '#1F2025',

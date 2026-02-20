@@ -46,6 +46,9 @@
           "purpose": "any maskable"
         }
       ]
-    }
+    },
+    "plugins": [
+      "expo-secure-store"
+    ]
   }
 }

@@ -3,32 +3,19 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, Text, StyleSheet } from 'react-native';
 import { Colors } from '../theme';
 
-import HomeScreen from '../screens/HomeScreen';
+import HomeTabs from './HomeTabs';
 import CheckInsScreen from '../screens/CheckInsScreen';
-import MissionsScreen from '../screens/MissionsScreen';
-import StatisticsScreen from '../screens/StatisticsScreen';
-import FlowsScreen from '../screens/FlowsScreen';
-import StoreScreen from '../screens/StoreScreen';
-import ProfileScreen from '../screens/ProfileScreen';
+import TodayScreen from '../screens/TodayScreen';
 
 const Tab = createBottomTabNavigator();
 
-// SVG-style unicode icons for each tab
-const ICONS: Record<string, { active: string; inactive: string }> = {
-  Home:       { active: '⬡', inactive: '⬡' },
-  'Check-ins':{ active: '◉', inactive: '◎' },
-  Missions:   { active: '◈', inactive: '◈' },
-  Statistics: { active: '▦', inactive: '▦' },
-  Flows:      { active: '◑', inactive: '◑' },
-  Store:      { active: '◆', inactive: '◇' },
-  Profile:    { active: '●', inactive: '○' },
-};
 
 function TabIcon({ name, focused }: { name: string; focused: boolean }) {
+  const emoji = name === 'WTH!' ? '⏱' : name === 'TODAY!' ? '☀️' : '🏠';
   return (
     <View style={iconStyles.wrap}>
-      <Text style={[iconStyles.icon, { color: focused ? Colors.molten : 'rgba(255,255,255,0.3)' }]}>
-        {focused ? ICONS[name]?.active : ICONS[name]?.inactive}
+      <Text style={[iconStyles.icon, { opacity: focused ? 1 : 0.3 }]}>
+        {emoji}
       </Text>
     </View>
   );
@@ -46,13 +33,9 @@ export default function TabNavigator() {
         tabBarIcon: ({ focused }) => <TabIcon name={route.name} focused={focused} />,
       })}
     >
-      <Tab.Screen name="Home" component={HomeScreen} />
-      <Tab.Screen name="Check-ins" component={CheckInsScreen} />
-      <Tab.Screen name="Missions" component={MissionsScreen} />
-      <Tab.Screen name="Statistics" component={StatisticsScreen} />
-      <Tab.Screen name="Flows" component={FlowsScreen} />
-      <Tab.Screen name="Store" component={StoreScreen} />
-      <Tab.Screen name="Profile" component={ProfileScreen} />
+      <Tab.Screen name="Home" component={HomeTabs} />
+      <Tab.Screen name="WTH!" component={CheckInsScreen} />
+      <Tab.Screen name="TODAY!" component={TodayScreen} />
     </Tab.Navigator>
   );
 }

@@ -4,19 +4,20 @@ import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
+import { ThemeProvider, useTheme } from './src/context/ThemeContext';
 import TabNavigator from './src/navigation/TabNavigator';
 import SignInScreen from './src/screens/auth/SignInScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
-import { Colors } from './src/theme';
 
 function RootNavigator() {
   const { session, loading } = useAuth();
+  const { colors, isDark } = useTheme();
   const [authView, setAuthView] = useState<'signIn' | 'signUp'>('signIn');
 
   if (loading) {
     return (
-      <View style={{ flex: 1, backgroundColor: Colors.charcoal, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={Colors.molten} size="large" />
+      <View style={{ flex: 1, backgroundColor: colors.charcoal, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator color={colors.molten} size="large" />
       </View>
     );
   }
@@ -36,11 +37,22 @@ function RootNavigator() {
   );
 }
 
+function AppContent() {
+  const { colors, isDark } = useTheme();
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.charcoal} />
+      <AuthProvider>
+        <RootNavigator />
+      </AuthProvider>
+    </>
+  );
+}
+
 export default function App() {
   return (
-    <AuthProvider>
-      <StatusBar style="light" backgroundColor={Colors.charcoal} />
-      <RootNavigator />
-    </AuthProvider>
+    <ThemeProvider>
+      <AppContent />
+    </ThemeProvider>
   );
 }
