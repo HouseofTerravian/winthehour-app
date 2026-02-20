@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -12,50 +12,78 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../theme';
+import { useAuth } from '../context/AuthContext';
 
-type Profile = {
+type DraftProfile = {
   displayName: string;
   username: string;
   goal: string;
   timezone: string;
   focusArea: string;
-};
-
-const DEFAULT_PROFILE: Profile = {
-  displayName: '',
-  username: '',
-  goal: '',
-  timezone: 'EST',
-  focusArea: '',
+  notificationsOn: boolean;
+  silentMode: boolean;
 };
 
 const FOCUS_AREAS = ['Career', 'Fitness', 'Business', 'Academics', 'Creative', 'Personal'];
 const TIMEZONES = ['EST', 'CST', 'MST', 'PST', 'GMT', 'CET'];
 
 function getInitials(name: string) {
-  return name
-    .split(' ')
-    .map((w) => w[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || '??';
+  return (
+    name
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2) || '??'
+  );
+}
+
+function profileToDraft(profile: ReturnType<typeof useAuth>['profile']): DraftProfile {
+  return {
+    displayName: profile?.display_name ?? '',
+    username: profile?.username ?? '',
+    goal: profile?.goal ?? '',
+    timezone: profile?.timezone ?? 'EST',
+    focusArea: profile?.focus_area ?? 'Career',
+    notificationsOn: profile?.notifications_on ?? true,
+    silentMode: profile?.silent_mode ?? false,
+  };
 }
 
 export default function ProfileScreen() {
-  const [profile, setProfile] = useState<Profile>(DEFAULT_PROFILE);
+  const { profile, updateProfile, signOut } = useAuth();
   const [editing, setEditing] = useState(false);
-  const [draft, setDraft] = useState<Profile>(DEFAULT_PROFILE);
-  const [notificationsOn, setNotificationsOn] = useState(true);
-  const [silentMode, setSilentMode] = useState(false);
+  const [draft, setDraft] = useState<DraftProfile>(() => profileToDraft(profile));
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+
+  // Seed draft when profile first loads from context
+  useEffect(() => {
+    if (profile && !editing) {
+      setDraft(profileToDraft(profile));
+    }
+  }, [profile]);
 
   function startEdit() {
-    setDraft({ ...profile });
+    setDraft(profileToDraft(profile));
     setEditing(true);
   }
 
-  function saveProfile() {
-    setProfile({ ...draft });
+  async function saveProfile() {
+    setSaveError(null);
+    const err = await updateProfile({
+      display_name: draft.displayName,
+      username: draft.username || null,
+      goal: draft.goal || null,
+      timezone: draft.timezone,
+      focus_area: draft.focusArea,
+      notifications_on: draft.notificationsOn,
+      silent_mode: draft.silentMode,
+    });
+    if (err) {
+      setSaveError(err);
+      return;
+    }
     setEditing(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
@@ -63,10 +91,11 @@ export default function ProfileScreen() {
 
   function cancelEdit() {
     setEditing(false);
-    setDraft({ ...profile });
+    setDraft(profileToDraft(profile));
   }
 
-  const hasProfile = profile.displayName.trim().length > 0;
+  const displayName = editing ? draft.displayName : (profile?.display_name ?? '');
+  const hasProfile = displayName.trim().length > 0;
 
   return (
     <KeyboardAvoidingView
@@ -85,15 +114,15 @@ export default function ProfileScreen() {
           >
             <View style={styles.avatarInner}>
               <Text style={styles.avatarInitials}>
-                {hasProfile ? getInitials(profile.displayName) : '?'}
+                {hasProfile ? getInitials(displayName) : '?'}
               </Text>
             </View>
           </LinearGradient>
 
           {hasProfile ? (
             <>
-              <Text style={styles.displayName}>{profile.displayName}</Text>
-              {profile.username ? (
+              <Text style={styles.displayName}>{displayName}</Text>
+              {profile?.username ? (
                 <Text style={styles.username}>@{profile.username}</Text>
               ) : null}
             </>
@@ -111,7 +140,7 @@ export default function ProfileScreen() {
               end={{ x: 1, y: 0 }}
               style={styles.tierBadge}
             >
-              <Text style={styles.tierBadgeText}>FRESHMAN</Text>
+              <Text style={styles.tierBadgeText}>{(profile?.tier ?? 'FRESHMAN').toUpperCase()}</Text>
             </LinearGradient>
           </View>
         </View>
@@ -119,9 +148,9 @@ export default function ProfileScreen() {
         {/* Quick Stats */}
         <View style={styles.statsRow}>
           {[
-            { label: 'Day Streak', value: '7', color: Colors.molten },
+            { label: 'Day Streak', value: String(profile?.streak ?? 0), color: Colors.molten },
             { label: 'Hours Won', value: '3', color: Colors.white },
-            { label: 'Total XP', value: '1,420', color: Colors.gold },
+            { label: 'Total XP', value: (profile?.xp ?? 0).toLocaleString(), color: Colors.gold },
           ].map((s) => (
             <View key={s.label} style={styles.statPill}>
               <Text style={[styles.statPillValue, { color: s.color }]}>{s.value}</Text>
@@ -155,17 +184,22 @@ export default function ProfileScreen() {
               <Text style={styles.savedText}>Profile saved ✓</Text>
             </View>
           )}
+          {saveError && (
+            <View style={styles.errorBanner}>
+              <Text style={styles.errorText}>{saveError}</Text>
+            </View>
+          )}
 
           <Field
             label="DISPLAY NAME"
-            value={editing ? draft.displayName : profile.displayName}
+            value={editing ? draft.displayName : (profile?.display_name ?? '')}
             placeholder="Your name"
             editable={editing}
             onChangeText={(t) => setDraft((p) => ({ ...p, displayName: t }))}
           />
           <Field
             label="USERNAME"
-            value={editing ? draft.username : profile.username}
+            value={editing ? draft.username : (profile?.username ?? '')}
             placeholder="@handle"
             editable={editing}
             onChangeText={(t) => setDraft((p) => ({ ...p, username: t.replace('@', '') }))}
@@ -173,7 +207,7 @@ export default function ProfileScreen() {
           />
           <Field
             label="GOAL STATEMENT"
-            value={editing ? draft.goal : profile.goal}
+            value={editing ? draft.goal : (profile?.goal ?? '')}
             placeholder="What are you building toward?"
             editable={editing}
             onChangeText={(t) => setDraft((p) => ({ ...p, goal: t }))}
@@ -186,9 +220,7 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { marginBottom: 14 }]}>Focus Area</Text>
           <View style={styles.chipGrid}>
             {FOCUS_AREAS.map((area) => {
-              const active = editing
-                ? draft.focusArea === area
-                : profile.focusArea === area;
+              const active = editing ? draft.focusArea === area : profile?.focus_area === area;
               return (
                 <TouchableOpacity
                   key={area}
@@ -208,7 +240,7 @@ export default function ProfileScreen() {
           <Text style={[styles.sectionTitle, { marginBottom: 14 }]}>Timezone</Text>
           <View style={styles.chipGrid}>
             {TIMEZONES.map((tz) => {
-              const active = editing ? draft.timezone === tz : profile.timezone === tz;
+              const active = editing ? draft.timezone === tz : profile?.timezone === tz;
               return (
                 <TouchableOpacity
                   key={tz}
@@ -232,8 +264,8 @@ export default function ProfileScreen() {
               <Text style={styles.prefSub}>HH:55 reset reminders</Text>
             </View>
             <Switch
-              value={notificationsOn}
-              onValueChange={setNotificationsOn}
+              value={editing ? draft.notificationsOn : (profile?.notifications_on ?? true)}
+              onValueChange={(v) => editing && setDraft((p) => ({ ...p, notificationsOn: v }))}
               trackColor={{ false: Colors.steel, true: Colors.molten }}
               thumbColor={Colors.white}
             />
@@ -244,13 +276,18 @@ export default function ProfileScreen() {
               <Text style={styles.prefSub}>Pause all interruptions</Text>
             </View>
             <Switch
-              value={silentMode}
-              onValueChange={setSilentMode}
+              value={editing ? draft.silentMode : (profile?.silent_mode ?? false)}
+              onValueChange={(v) => editing && setDraft((p) => ({ ...p, silentMode: v }))}
               trackColor={{ false: Colors.steel, true: Colors.gold }}
               thumbColor={Colors.white}
             />
           </View>
         </View>
+
+        {/* Sign Out */}
+        <TouchableOpacity style={styles.signOutBtn} onPress={signOut} activeOpacity={0.75}>
+          <Text style={styles.signOutBtnText}>Sign Out</Text>
+        </TouchableOpacity>
 
         {/* Danger Zone */}
         <TouchableOpacity style={styles.resetBtn} activeOpacity={0.75}>
@@ -424,6 +461,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   savedText: { color: '#00C850', fontSize: 13, fontWeight: '600' },
+  errorBanner: {
+    backgroundColor: 'rgba(255,60,60,0.12)',
+    borderRadius: 10,
+    padding: 10,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255,60,60,0.35)',
+    alignItems: 'center',
+  },
+  errorText: { color: '#FF6060', fontSize: 13, fontWeight: '500' },
 
   chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
   chip: {
@@ -448,6 +495,16 @@ const styles = StyleSheet.create({
   },
   prefLabel: { fontSize: 15, fontWeight: '600', color: Colors.white, marginBottom: 3 },
   prefSub: { fontSize: 12, color: Colors.muted },
+
+  signOutBtn: {
+    borderWidth: 1.5,
+    borderColor: Colors.molten,
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  signOutBtnText: { color: Colors.molten, fontSize: 14, fontWeight: '700', letterSpacing: 0.5 },
 
   resetBtn: {
     borderWidth: 1,

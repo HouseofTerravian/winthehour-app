@@ -10,15 +10,19 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../theme';
-
-const STREAK = 7;
-const XP = 1420;
-const TIER = 'Freshman';
+import { useAuth } from '../context/AuthContext';
 
 export default function HomeScreen() {
+  const { profile } = useAuth();
+  const streak = profile?.streak ?? 0;
+  const xp = profile?.xp ?? 0;
+  const tier = profile?.tier ?? 'Freshman';
+
   const hour = new Date().getHours();
-  const greeting =
-    hour < 5 ? 'Late night.' : hour < 12 ? 'Good morning.' : hour < 17 ? 'Good afternoon.' : 'Good evening.';
+  const timeGreeting =
+    hour < 5 ? 'Late night' : hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+  const firstName = profile?.display_name?.split(' ')[0];
+  const greeting = firstName ? `${timeGreeting}, ${firstName}.` : `${timeGreeting}.`;
 
   return (
     <View style={styles.root}>
@@ -39,7 +43,7 @@ export default function HomeScreen() {
             />
           </View>
           <View style={styles.tierBadge}>
-            <Text style={styles.tierText}>{TIER.toUpperCase()}</Text>
+            <Text style={styles.tierText}>{tier.toUpperCase()}</Text>
           </View>
         </View>
 
@@ -49,14 +53,14 @@ export default function HomeScreen() {
             colors={['rgba(255,94,26,0.15)', 'rgba(255,94,26,0.05)']}
             style={styles.statCard}
           >
-            <Text style={[styles.statValue, { color: Colors.molten }]}>{STREAK}</Text>
+            <Text style={[styles.statValue, { color: Colors.molten }]}>{streak}</Text>
             <Text style={styles.statLabel}>Day Streak</Text>
           </LinearGradient>
           <LinearGradient
             colors={['rgba(255,179,0,0.15)', 'rgba(255,179,0,0.05)']}
             style={styles.statCard}
           >
-            <Text style={[styles.statValue, { color: Colors.gold }]}>{XP.toLocaleString()}</Text>
+            <Text style={[styles.statValue, { color: Colors.gold }]}>{xp.toLocaleString()}</Text>
             <Text style={styles.statLabel}>Total XP</Text>
           </LinearGradient>
           <LinearGradient
