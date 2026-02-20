@@ -90,17 +90,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     password: string,
     displayName: string,
   ): Promise<string | null> {
-    const { data, error } = await supabase.auth.signUp({ email, password });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name: displayName } },
+    });
     if (error) return error.message;
 
-    const userId = data.user?.id;
-    if (userId) {
-      const { error: insertError } = await supabase.from('profiles').insert({
-        id: userId,
-        display_name: displayName,
-      });
-      if (insertError) console.warn('Profile insert error:', insertError.message);
-    }
     return null;
   }
 
