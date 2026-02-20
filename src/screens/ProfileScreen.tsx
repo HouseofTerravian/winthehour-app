@@ -149,7 +149,7 @@ export default function ProfileScreen() {
         <View style={styles.statsRow}>
           {[
             { label: 'Day Streak', value: String(profile?.streak ?? 0), color: Colors.molten },
-            { label: 'Hours Won', value: '3', color: Colors.white },
+            { label: 'Hours Won', value: '0', color: Colors.white },
             { label: 'Total XP', value: (profile?.xp ?? 0).toLocaleString(), color: Colors.gold },
           ].map((s) => (
             <View key={s.label} style={styles.statPill}>

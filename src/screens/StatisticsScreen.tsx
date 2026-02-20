@@ -6,12 +6,12 @@ import { Colors } from '../theme';
 type Range = 'week' | 'month' | 'all';
 
 const WEEKLY_DATA = [
-  { day: 'M', won: 5, total: 8 },
-  { day: 'T', won: 7, total: 8 },
-  { day: 'W', won: 3, total: 8 },
-  { day: 'T', won: 6, total: 8 },
-  { day: 'F', won: 8, total: 8 },
-  { day: 'S', won: 4, total: 6 },
+  { day: 'M', won: 0, total: 0 },
+  { day: 'T', won: 0, total: 0 },
+  { day: 'W', won: 0, total: 0 },
+  { day: 'T', won: 0, total: 0 },
+  { day: 'F', won: 0, total: 0 },
+  { day: 'S', won: 0, total: 0 },
   { day: 'S', won: 0, total: 0 },
 ];
 
@@ -58,11 +58,11 @@ export default function StatisticsScreen() {
             <Text style={styles.statMeta}>Win Rate</Text>
           </LinearGradient>
           <LinearGradient colors={['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.02)']} style={styles.statCard}>
-            <Text style={styles.statBig}>7</Text>
+            <Text style={styles.statBig}>0</Text>
             <Text style={styles.statMeta}>Streak</Text>
           </LinearGradient>
           <LinearGradient colors={['rgba(255,179,0,0.1)', 'rgba(255,179,0,0.02)']} style={styles.statCard}>
-            <Text style={[styles.statBig, { color: Colors.gold, fontSize: 26 }]}>1,420</Text>
+            <Text style={[styles.statBig, { color: Colors.gold, fontSize: 26 }]}>0</Text>
             <Text style={styles.statMeta}>Total XP</Text>
           </LinearGradient>
         </View>

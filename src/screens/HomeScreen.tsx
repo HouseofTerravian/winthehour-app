@@ -67,7 +67,7 @@ export default function HomeScreen() {
             colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)']}
             style={styles.statCard}
           >
-            <Text style={styles.statValue}>3</Text>
+            <Text style={styles.statValue}>0</Text>
             <Text style={styles.statLabel}>Hrs Won</Text>
           </LinearGradient>
         </View>
