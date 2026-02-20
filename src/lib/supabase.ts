@@ -6,21 +6,22 @@ import * as SecureStore from 'expo-secure-store';
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
 
-// SecureStore is native-only — no-op adapter for web
-const secureStoreAdapter =
-  Platform.OS === 'web'
-    ? undefined
-    : {
-        getItem: (key: string) => SecureStore.getItemAsync(key),
-        setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
-        removeItem: (key: string) => SecureStore.deleteItemAsync(key),
-      };
+const authOptions: Record<string, any> = {
+  autoRefreshToken: true,
+  persistSession: true,
+  detectSessionInUrl: false,
+};
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    storage: secureStoreAdapter as any,
-    autoRefreshToken: true,
-    persistSession: true,
-    detectSessionInUrl: false,
-  },
-});
+// Only set custom storage on native — let web use its default localStorage
+if (Platform.OS !== 'web') {
+  authOptions.storage = {
+    getItem: (key: string) => SecureStore.getItemAsync(key),
+    setItem: (key: string, value: string) => SecureStore.setItemAsync(key, value),
+    removeItem: (key: string) => SecureStore.deleteItemAsync(key),
+  };
+}
+
+// Bypass the Web Locks API — stale locks from hot reloads cause 10s timeouts in dev
+authOptions.lock = (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => fn();
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, { auth: authOptions });

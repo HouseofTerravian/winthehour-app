@@ -53,32 +53,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   useEffect(() => {
-    // Restore persisted session on mount
-    supabase.auth.getSession().then(async ({ data: { session: s } }) => {
-      setSession(s);
-      setUser(s?.user ?? null);
-      if (s?.user) {
-        const p = await fetchProfile(s.user.id);
-        setProfile(p);
-      }
-      setLoading(false);
-    });
+    let mounted = true;
 
-    // Listen for all future auth state changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, s) => {
+    // getSession() reliably reads the persisted session on startup
+    supabase.auth.getSession()
+      .then(({ data: { session: s } }) => {
+        if (!mounted) return;
+        setSession(s);
+        setUser(s?.user ?? null);
+        if (!s?.user) setLoading(false);
+      })
+      .catch(() => {
+        if (mounted) setLoading(false);
+      });
+
+    // onAuthStateChange handles all subsequent transitions (sign in, sign out, token refresh)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, s) => {
+      if (!mounted) return;
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) {
-        const p = await fetchProfile(s.user.id);
-        setProfile(p);
-      } else {
+      if (!s?.user) {
         setProfile(null);
+        setLoading(false);
       }
-      setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    // Safety net — never leave the app stuck on the loading screen
+    const timeout = setTimeout(() => {
+      if (mounted) setLoading(false);
+    }, 5000);
+
+    return () => {
+      mounted = false;
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
+
+  // Fetch profile in a separate effect — never call Supabase inside onAuthStateChange
+  useEffect(() => {
+    if (!user) return;
+    let active = true;
+    fetchProfile(user.id)
+      .then(p => { if (active) setProfile(p); })
+      .catch(e => console.warn('fetchProfile:', e))
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [user?.id]);
 
   async function signIn(email: string, password: string): Promise<string | null> {
     const { error } = await supabase.auth.signInWithPassword({ email, password });
