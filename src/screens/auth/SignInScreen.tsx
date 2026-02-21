@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
     paddingBottom: 48,
     justifyContent: 'center',
   },
-  logo: { width: 200, height: 52, marginBottom: 40, alignSelf: 'center' },
+  logo: { width: 260, height: 68, marginBottom: 40, alignSelf: 'center' },
   headline: { fontSize: 28, fontWeight: '800', color: Colors.white, marginBottom: 6 },
   sub: { fontSize: 15, color: 'rgba(255,255,255,0.45)', marginBottom: 32 },
 
