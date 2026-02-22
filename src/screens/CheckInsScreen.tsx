@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
   View,
   Text,
@@ -10,6 +10,8 @@ import {
   Platform,
   Image,
   Switch,
+  AppState,
+  type AppStateStatus,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
@@ -18,8 +20,6 @@ import {
   loadCheckIns,
   saveCheckIn,
   loadUnavailableHours,
-  loadBeastLastSubmit,
-  saveBeastLastSubmit,
   todayStr,
   type CheckInRecord,
 } from '../lib/checkins';
@@ -29,7 +29,15 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // Flow steps: ask → plan (win) | ask → loss_reason → rate (loss)
 type Step = 'ask' | 'plan' | 'loss_reason' | 'rate' | 'done';
 
-const BEAST_SECONDS = 15 * 60;
+// Quarter-hour anchors: :00, :15, :30, :45
+const QUARTER_MS = 15 * 60 * 1000;
+
+function msUntilNextQuarter(): number {
+  const now = new Date();
+  const totalMs = (now.getMinutes() * 60 + now.getSeconds()) * 1000 + now.getMilliseconds();
+  // +1 so that a boundary instant advances to the NEXT quarter
+  return Math.ceil((totalMs + 1) / QUARTER_MS) * QUARTER_MS - totalMs;
+}
 
 function formatHour(h: number) {
   const suffix  = h < 12 ? 'AM' : 'PM';
@@ -71,7 +79,11 @@ export default function CheckInsScreen() {
 
   // ── BeastMode ───────────────────────────────────────────────────────────────
   const [beastMode, setBeastMode] = useState(false);
-  const [timeLeft,  setTimeLeft]  = useState(BEAST_SECONDS);
+  const [timeLeft,  setTimeLeft]  = useState(0);
+
+  const beastTimeoutRef  = useRef<ReturnType<typeof setTimeout>  | null>(null);
+  const beastIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const beastTickRef     = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const todayIns       = allCheckIns.filter((r) => r.date === today);
   const existingRecord = todayIns.find((r) => r.hour === activeHour);
@@ -85,21 +97,14 @@ export default function CheckInsScreen() {
 
   // ── Load data ───────────────────────────────────────────────────────────────
   const load = useCallback(async () => {
-    const [ins, unav, beastRaw, lastRaw] = await Promise.all([
+    const [ins, unav, beastRaw] = await Promise.all([
       loadCheckIns(),
       loadUnavailableHours(),
       AsyncStorage.getItem('@wth_beast_mode'),
-      loadBeastLastSubmit(),
     ]);
     setAllCheckIns(ins);
     setUnavailable(unav);
-
-    const isBeast = beastRaw === 'true';
-    setBeastMode(isBeast);
-    if (isBeast && lastRaw) {
-      const elapsed = Math.floor((Date.now() - lastRaw) / 1000);
-      setTimeLeft(Math.max(0, BEAST_SECONDS - elapsed));
-    }
+    setBeastMode(beastRaw === 'true');
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -114,30 +119,57 @@ export default function CheckInsScreen() {
     setPlan('');
   }, [activeHour]);
 
-  // ── BeastMode countdown ──────────────────────────────────────────────────
+  // ── BeastMode — quarter-hour clock anchors (:00, :15, :30, :45) ─────────────
+  function clearBeastTimers() {
+    if (beastTimeoutRef.current)  { clearTimeout(beastTimeoutRef.current);   beastTimeoutRef.current  = null; }
+    if (beastIntervalRef.current) { clearInterval(beastIntervalRef.current); beastIntervalRef.current = null; }
+    if (beastTickRef.current)     { clearInterval(beastTickRef.current);     beastTickRef.current     = null; }
+  }
+
+  function triggerBeast() {
+    setStep('ask');
+    setTempResult(null);
+    setLossReason('');
+    setTempRating(null);
+    setPlan('');
+  }
+
+  function armBeastMode() {
+    clearBeastTimers();
+
+    // Display tick — reads real clock every second, no drift
+    beastTickRef.current = setInterval(() => {
+      setTimeLeft(Math.ceil(msUntilNextQuarter() / 1000));
+    }, 1000);
+    setTimeLeft(Math.ceil(msUntilNextQuarter() / 1000));
+
+    // Align to next :00/:15/:30/:45, then pulse every 15 min exactly
+    const firstDelay = msUntilNextQuarter();
+    beastTimeoutRef.current = setTimeout(() => {
+      triggerBeast();
+      beastIntervalRef.current = setInterval(triggerBeast, QUARTER_MS);
+    }, firstDelay);
+  }
+
+  useEffect(() => {
+    if (!beastMode) { clearBeastTimers(); return; }
+    armBeastMode();
+    return clearBeastTimers;
+  }, [beastMode]);
+
+  // Re-align when app returns to foreground (prevents background throttle drift)
   useEffect(() => {
     if (!beastMode) return;
-    const iv = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          setStep('ask');
-          setTempResult(null);
-          setLossReason('');
-          setTempRating(null);
-          setPlan('');
-          return BEAST_SECONDS;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(iv);
+    const sub = AppState.addEventListener('change', (state: AppStateStatus) => {
+      if (state === 'active') armBeastMode();
+    });
+    return () => sub.remove();
   }, [beastMode]);
 
   async function toggleBeastMode() {
     const next = !beastMode;
     setBeastMode(next);
     await AsyncStorage.setItem('@wth_beast_mode', next ? 'true' : 'false');
-    if (next) setTimeLeft(BEAST_SECONDS);
   }
 
   // ── Submit ───────────────────────────────────────────────────────────────
@@ -155,7 +187,6 @@ export default function CheckInsScreen() {
       return [...rest, record];
     });
     setStep('done');
-    if (beastMode) { await saveBeastLastSubmit(Date.now()); setTimeLeft(BEAST_SECONDS); }
   }
 
   async function submitLoss(reasonText: string, rating: number) {
@@ -173,7 +204,6 @@ export default function CheckInsScreen() {
       return [...rest, record];
     });
     setStep('done');
-    if (beastMode) { await saveBeastLastSubmit(Date.now()); setTimeLeft(BEAST_SECONDS); }
   }
 
   const isUnavailable = unavailable.includes(activeHour);
