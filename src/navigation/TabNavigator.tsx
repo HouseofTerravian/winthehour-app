@@ -72,7 +72,7 @@ export default function TabNavigator() {
         component={CheckInsScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem icon="⏱" label="WTH!" subIndicator="60M" focused={focused} />
+            <TabItem icon="◔" label="WTH!" subIndicator="60M" focused={focused} />
           ),
         }}
       />
@@ -81,7 +81,7 @@ export default function TabNavigator() {
         component={TodayScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem icon="☀️" label="TODAY" subIndicator="24H" focused={focused} />
+            <TabItem icon="◉" label="TODAY" subIndicator="24H" focused={focused} />
           ),
         }}
       />
@@ -90,7 +90,7 @@ export default function TabNavigator() {
         component={TomorrowScreen}
         options={{
           tabBarIcon: ({ focused }) => (
-            <TabItem icon="→" label="TOMORROW" focused={focused} />
+            <TabItem icon="▷" label="TOMORROW" focused={focused} />
           ),
         }}
       />

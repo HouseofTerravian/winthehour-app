@@ -477,17 +477,6 @@ export default function CheckInsScreen() {
             </>
           )}
 
-          {/* HH:55 Banner */}
-          <View style={[s.resetNote, {
-            backgroundColor: colors.cardBg,
-            borderColor: 'rgba(255,179,0,0.3)',
-            borderRadius: r(16),
-          }]}>
-            <Text style={[s.resetNoteLabel, { color: colors.gold, fontFamily: skinFonts.fontFamily }]}>HH:55 RESET RITUAL</Text>
-            <Text style={[s.resetNoteBody, { color: colors.text2, fontFamily: skinFonts.fontFamily }]}>
-              At :55 of every hour — pause, assess, log. Then go again.
-            </Text>
-          </View>
         </ScrollView>
       </ArenaContainer>
     </KeyboardAvoidingView>
@@ -554,7 +543,4 @@ const s = StyleSheet.create({
   hourBadge:     { borderWidth: 1.5, paddingHorizontal: 12, paddingVertical: 5 },
   hourBadgeText: { fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
 
-  resetNote:      { padding: 18, marginTop: 4, borderWidth: 1, borderLeftWidth: 3, borderLeftColor: '#FFB300' },
-  resetNoteLabel: { fontSize: 10, fontWeight: '700', letterSpacing: 1, marginBottom: 6 },
-  resetNoteBody:  { fontSize: 14, lineHeight: 20 },
 });
