@@ -14,6 +14,22 @@ type UpdateEntry = {
 
 const UPDATES: UpdateEntry[] = [
   {
+    version: '0.6.0',
+    date: '2026-02-21',
+    tag: 'NAVIGATION',
+    tagColor: Colors.molten,
+    items: [
+      '4-column temporal spine: WTH! | TODAY | TOMORROW | NEXUS',
+      'TOMORROW tab: free tier sees premium lock overlay; paid tier gets Tomorrow/Week/Month scaffold',
+      'NEXUS tab: identity hub replacing Home tab — User Alias header + LIFETIME sub-label',
+      'Display Alias system: set sovereign identity in Profile → Appearance (max 10 chars, uppercase)',
+      'NEXUS tab label dynamically shows alias on paid plans; falls back to NEXUS',
+      'All 9 reorderable tabs (Profile, Dashboard, Missions, Flows, Stats, Updates, Store, Integrations, Coupons) now live inside NEXUS',
+      'WTH! tab shows 60M sub-indicator; TODAY shows 24H sub-indicator in bottom nav',
+      'Bottom nav reduced from 3 tabs to 4 cleaner columns',
+    ],
+  },
+  {
     version: '0.5.3',
     date: '2026-02-21',
     tag: 'VISUAL',

@@ -1,6 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useTheme } from '../context/ThemeContext';
+import { useAuth } from '../context/AuthContext';
 import { DEFAULT_TAB_ORDER } from '../lib/app-settings';
 
 import HomeScreen from '../screens/HomeScreen';
@@ -40,16 +42,31 @@ function renderScreen(key: string) {
   }
 }
 
-export default function HomeTabs() {
+export default function NexusScreen() {
   const { colors, skinFonts, tabOrder, setTabOrder } = useTheme();
+  const { profile } = useAuth();
 
   const tabs = (tabOrder.length ? tabOrder : DEFAULT_TAB_ORDER)
     .map((k) => ALL_TABS[k])
     .filter(Boolean);
 
-  const [activeTab, setActiveTab]   = useState('dashboard');
+  const [activeTab,   setActiveTab]   = useState('dashboard');
   const [reorderMode, setReorderMode] = useState(false);
-  const [pickedTab, setPickedTab]   = useState<string | null>(null);
+  const [pickedTab,   setPickedTab]   = useState<string | null>(null);
+  const [alias,       setAlias]       = useState('');
+
+  useEffect(() => {
+    AsyncStorage.getItem('@wth_display_alias').then((val) => {
+      if (val) setAlias(val);
+    });
+  }, []);
+
+  const isFree = !profile?.tier || profile.tier === 'Freshman';
+  const nexusLabel = (() => {
+    if (isFree || !alias.trim()) return 'NEXUS';
+    const upper = alias.trim().toUpperCase();
+    return upper.length > 10 ? upper.slice(0, 9) + '…' : upper;
+  })();
 
   function handleTabPress(key: string) {
     if (!reorderMode) {
@@ -90,6 +107,23 @@ export default function HomeTabs() {
 
   return (
     <View style={[s.root, { backgroundColor: colors.charcoal }]}>
+
+      {/* Identity strip */}
+      <View style={[s.identityStrip, {
+        paddingTop: Platform.OS === 'ios' ? 56 : Platform.OS === 'android' ? 32 : 20,
+        backgroundColor: colors.charcoal,
+        borderBottomColor: colors.cardBorder,
+      }]}>
+        <Text style={[s.nexusTitle, {
+          color: colors.text1,
+          fontFamily: skinFonts.titleFontFamily,
+          fontWeight: skinFonts.titleFontWeight,
+          letterSpacing: skinFonts.titleLetterSpacing,
+        }]}>
+          {nexusLabel}
+        </Text>
+        <Text style={s.nexusLifetime}>LIFETIME</Text>
+      </View>
 
       {/* Tab bar */}
       <View style={[s.tabBarWrap, { backgroundColor: colors.slate, borderBottomColor: colors.cardBorder }]}>
@@ -219,9 +253,19 @@ export default function HomeTabs() {
 const s = StyleSheet.create({
   root: { flex: 1 },
 
+  identityStrip: {
+    paddingHorizontal: 24,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+  },
+  nexusTitle:   { fontSize: 36, marginBottom: 2 },
+  nexusLifetime: {
+    fontSize: 9, fontWeight: '700', letterSpacing: 2,
+    color: 'rgba(255,255,255,0.18)',
+  },
+
   tabBarWrap: {
     borderBottomWidth: 1,
-    paddingTop: Platform.OS === 'ios' ? 44 : Platform.OS === 'android' ? 24 : 16,
   },
   reorderBanner: {
     flexDirection: 'row',

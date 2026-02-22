@@ -14,6 +14,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { Colors } from '../theme';
 import { useAuth } from '../context/AuthContext';
 import { useTheme, SKINS, type Skin } from '../context/ThemeContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   loadUnavailableHours,
   saveUnavailableHours,
@@ -70,8 +71,9 @@ export default function ProfileScreen() {
   } = useTheme();
   const r = (n: number) => Math.round(n * skinFonts.borderRadiusScale);
 
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing]     = useState(false);
   const [aiNameDraft, setAiNameDraft] = useState(aiName);
+  const [aliasDraft,  setAliasDraft]  = useState('');
   const [draft, setDraft] = useState<DraftProfile>(() => profileToDraft(profile));
   const [saved, setSaved] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -83,6 +85,18 @@ export default function ProfileScreen() {
       setDraft(profileToDraft(profile));
     }
   }, [profile]);
+
+  useEffect(() => {
+    AsyncStorage.getItem('@wth_display_alias').then((val) => {
+      if (val) setAliasDraft(val);
+    });
+  }, []);
+
+  async function saveAlias() {
+    const clean = aliasDraft.trim().toUpperCase().slice(0, 10);
+    await AsyncStorage.setItem('@wth_display_alias', clean);
+    setAliasDraft(clean);
+  }
 
   const loadUnav = useCallback(async () => {
     const hours = await loadUnavailableHours();
@@ -355,6 +369,30 @@ export default function ProfileScreen() {
                 </TouchableOpacity>
               );
             })}
+          </View>
+
+          {/* Display Alias */}
+          <Text style={[styles.prefLabel, { marginTop: 18, marginBottom: 4 }]}>DISPLAY ALIAS</Text>
+          <Text style={[styles.prefSub, { marginBottom: 10 }]}>
+            Your chosen identity in bottom nav. Max 10 chars. Paid plans only.
+          </Text>
+          <View style={[styles.aiNameRow, { borderColor: 'rgba(60,79,101,0.5)', borderRadius: r(12) }]}>
+            <TextInput
+              style={[styles.aiNameInput, { fontWeight: '700', letterSpacing: 1 }]}
+              value={aliasDraft}
+              onChangeText={(t) => setAliasDraft(t.toUpperCase().replace(/\s/g, '').slice(0, 10))}
+              placeholder="ATEMNOO, DREAM…"
+              placeholderTextColor="rgba(255,255,255,0.25)"
+              autoCapitalize="characters"
+              maxLength={10}
+            />
+            <TouchableOpacity
+              style={[styles.aiNameSaveBtn, { borderRadius: r(8) }]}
+              onPress={saveAlias}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.aiNameSaveBtnText}>SAVE</Text>
+            </TouchableOpacity>
           </View>
         </View>
 
