@@ -92,45 +92,47 @@ export default function StatisticsScreen() {
               Win Hours to populate your graph.
             </Text>
           ) : (
-          <View style={styles.chart}>
-            {WEEKLY_DATA.map((d, i) => {
-              const fillH = maxWon > 0 ? Math.round((d.won / maxWon) * BAR_TRACK_H) : 0;
-              const ratio = d.total > 0 ? d.won / d.total : 0;
-              const barColor = ratio >= 0.75 ? Colors.molten : ratio >= 0.5 ? Colors.gold : Colors.steel;
-              return (
-                <View key={i} style={styles.chartCol}>
-                  <Text style={[styles.barNum, { color: d.won > 0 ? Colors.white : 'transparent' }]}>
-                    {d.won}
-                  </Text>
-                  <View style={styles.barTrack}>
-                    {fillH > 0 && (
-                      <LinearGradient
-                        colors={[barColor, `${barColor}55`]}
-                        start={{ x: 0, y: 0 }}
-                        end={{ x: 0, y: 1 }}
-                        style={{ width: '100%', height: fillH, borderRadius: 8 }}
-                      />
-                    )}
-                  </View>
-                  <Text style={[styles.barLabel, { color: colors.text4 }]}>{d.day}</Text>
+            <>
+              <View style={styles.chart}>
+                {WEEKLY_DATA.map((d, i) => {
+                  const fillH = maxWon > 0 ? Math.round((d.won / maxWon) * BAR_TRACK_H) : 0;
+                  const ratio = d.total > 0 ? d.won / d.total : 0;
+                  const barColor = ratio >= 0.75 ? Colors.molten : ratio >= 0.5 ? Colors.gold : Colors.steel;
+                  return (
+                    <View key={i} style={styles.chartCol}>
+                      <Text style={[styles.barNum, { color: d.won > 0 ? Colors.white : 'transparent' }]}>
+                        {d.won}
+                      </Text>
+                      <View style={styles.barTrack}>
+                        {fillH > 0 && (
+                          <LinearGradient
+                            colors={[barColor, `${barColor}55`]}
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 0, y: 1 }}
+                            style={{ width: '100%', height: fillH, borderRadius: 8 }}
+                          />
+                        )}
+                      </View>
+                      <Text style={[styles.barLabel, { color: colors.text4 }]}>{d.day}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+              <View style={styles.chartLegend}>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: Colors.molten }]} />
+                  <Text style={[styles.legendText, { color: colors.text4 }]}>≥75%</Text>
                 </View>
-              );
-            })}
-          </View>
-          <View style={styles.chartLegend}>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.molten }]} />
-              <Text style={[styles.legendText, { color: colors.text4 }]}>≥75%</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.gold }]} />
-              <Text style={[styles.legendText, { color: colors.text4 }]}>≥50%</Text>
-            </View>
-            <View style={styles.legendItem}>
-              <View style={[styles.legendDot, { backgroundColor: Colors.steel }]} />
-              <Text style={[styles.legendText, { color: colors.text4 }]}>{'<'}50%</Text>
-            </View>
-          </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: Colors.gold }]} />
+                  <Text style={[styles.legendText, { color: colors.text4 }]}>≥50%</Text>
+                </View>
+                <View style={styles.legendItem}>
+                  <View style={[styles.legendDot, { backgroundColor: Colors.steel }]} />
+                  <Text style={[styles.legendText, { color: colors.text4 }]}>{'<'}50%</Text>
+                </View>
+              </View>
+            </>
           )}
         </View>
 
