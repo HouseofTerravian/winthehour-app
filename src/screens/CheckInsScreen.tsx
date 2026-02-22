@@ -23,9 +23,11 @@ import {
   todayStr,
   type CheckInRecord,
 } from '../lib/checkins';
+import { ArenaContainer, HudCard, EliteButton, SectionHeader } from '../components/ui';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-type Step = 'ask' | 'why' | 'rate' | 'improve' | 'plan' | 'done';
+// Flow steps: ask → plan (win) | ask → loss_reason → rate (loss)
+type Step = 'ask' | 'plan' | 'loss_reason' | 'rate' | 'done';
 
 const BEAST_SECONDS = 15 * 60;
 
@@ -62,8 +64,8 @@ export default function CheckInsScreen() {
 
   // ── Flow state ──────────────────────────────────────────────────────────────
   const [step,        setStep]        = useState<Step>('ask');
-  const [tempWon,     setTempWon]     = useState<boolean | null>(null);
-  const [tempWhy,     setTempWhy]     = useState('');
+  const [tempResult,  setTempResult]  = useState<'win' | 'loss' | null>(null);
+  const [lossReason,  setLossReason]  = useState('');
   const [tempRating,  setTempRating]  = useState<number | null>(null);
   const [plan,        setPlan]        = useState('');
 
@@ -73,11 +75,10 @@ export default function CheckInsScreen() {
 
   const todayIns       = allCheckIns.filter((r) => r.date === today);
   const existingRecord = todayIns.find((r) => r.hour === activeHour);
-  const won     = todayIns.filter((r) => r.won).length;
+  const won     = todayIns.filter((r) => r.hour_result === 'win').length;
   const logged  = todayIns.length;
   const winRate = logged > 0 ? Math.round((won / logged) * 100) : 0;
 
-  // Only logged hours (excluding active)
   const loggedHours = todayIns
     .filter((r) => r.hour !== activeHour)
     .sort((a, b) => a.hour - b.hour);
@@ -107,8 +108,8 @@ export default function CheckInsScreen() {
   useEffect(() => {
     const rec = allCheckIns.find((r) => r.date === today && r.hour === activeHour);
     setStep(rec ? 'done' : 'ask');
-    setTempWon(null);
-    setTempWhy('');
+    setTempResult(null);
+    setLossReason('');
     setTempRating(null);
     setPlan('');
   }, [activeHour]);
@@ -120,8 +121,8 @@ export default function CheckInsScreen() {
       setTimeLeft((prev) => {
         if (prev <= 1) {
           setStep('ask');
-          setTempWon(null);
-          setTempWhy('');
+          setTempResult(null);
+          setLossReason('');
           setTempRating(null);
           setPlan('');
           return BEAST_SECONDS;
@@ -139,14 +140,13 @@ export default function CheckInsScreen() {
     if (next) setTimeLeft(BEAST_SECONDS);
   }
 
-  // ── Submit a check-in ────────────────────────────────────────────────────
-  async function submitLog(wonVal: boolean, whyVal: string, ratingVal: number | undefined, planVal: string) {
+  // ── Submit ───────────────────────────────────────────────────────────────
+  async function submitWin(planText: string) {
     const record: CheckInRecord = {
       date: today,
       hour: activeHour,
-      won:  wonVal,
-      rating: ratingVal,
-      nextHourPlan: planVal,
+      hour_result: 'win',
+      nextHourPlan: planText,
       loggedAt: new Date().toISOString(),
     };
     await saveCheckIn(record);
@@ -155,28 +155,39 @@ export default function CheckInsScreen() {
       return [...rest, record];
     });
     setStep('done');
-    if (beastMode) {
-      const ts = Date.now();
-      await saveBeastLastSubmit(ts);
-      setTimeLeft(BEAST_SECONDS);
-    }
+    if (beastMode) { await saveBeastLastSubmit(Date.now()); setTimeLeft(BEAST_SECONDS); }
+  }
+
+  async function submitLoss(reasonText: string, rating: number) {
+    const record: CheckInRecord = {
+      date: today,
+      hour: activeHour,
+      hour_result: 'loss',
+      intensity_rating: rating,
+      loss_reason_text: reasonText,
+      loggedAt: new Date().toISOString(),
+    };
+    await saveCheckIn(record);
+    setAllCheckIns((prev) => {
+      const rest = prev.filter((r) => !(r.date === today && r.hour === activeHour));
+      return [...rest, record];
+    });
+    setStep('done');
+    if (beastMode) { await saveBeastLastSubmit(Date.now()); setTimeLeft(BEAST_SECONDS); }
   }
 
   const isUnavailable = unavailable.includes(activeHour);
   const isFuture      = activeHour > currentHour;
 
-  const flowBorderWon  = colors.molten;
-  const flowBorderLost = colors.steel;
-
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <View style={[s.root, { backgroundColor: colors.charcoal }]}>
+      <ArenaContainer>
         <ScrollView
           contentContainerStyle={s.content}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          {/* Header row: title + BeastMode toggle */}
+          {/* Header */}
           <View style={s.headerRow}>
             <View>
               <Text style={[s.title, {
@@ -213,20 +224,26 @@ export default function CheckInsScreen() {
             </View>
           </View>
 
-          {/* Stats Row */}
+          {/* HUD Stats */}
           <View style={s.statsRow}>
-            <LinearGradient colors={['rgba(255,94,26,0.18)', 'rgba(255,94,26,0.04)']} style={[s.statCard, { borderRadius: r(16) }]}>
-              <Text style={[s.statVal, { color: colors.molten }]}>{won}</Text>
-              <Text style={[s.statLbl, { color: colors.text4, fontFamily: skinFonts.fontFamily }]}>HOURS WON</Text>
-            </LinearGradient>
-            <LinearGradient colors={['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.02)']} style={[s.statCard, { borderRadius: r(16) }]}>
-              <Text style={[s.statVal, { color: colors.text1 }]}>{logged}</Text>
-              <Text style={[s.statLbl, { color: colors.text4, fontFamily: skinFonts.fontFamily }]}>LOGGED</Text>
-            </LinearGradient>
-            <LinearGradient colors={['rgba(255,179,0,0.18)', 'rgba(255,179,0,0.04)']} style={[s.statCard, { borderRadius: r(16) }]}>
-              <Text style={[s.statVal, { color: colors.gold }]}>{winRate}%</Text>
-              <Text style={[s.statLbl, { color: colors.text4, fontFamily: skinFonts.fontFamily }]}>WIN RATE</Text>
-            </LinearGradient>
+            <HudCard
+              value={String(won)}
+              label="HOURS WON"
+              gradientColors={['rgba(255,94,26,0.16)', 'rgba(255,94,26,0.03)']}
+              valueColor={colors.molten}
+            />
+            <HudCard
+              value={String(logged)}
+              label="LOGGED"
+              gradientColors={['rgba(255,255,255,0.06)', 'rgba(255,255,255,0.02)']}
+              valueColor={colors.text1}
+            />
+            <HudCard
+              value={`${winRate}%`}
+              label="WIN RATE"
+              gradientColors={['rgba(255,179,0,0.16)', 'rgba(255,179,0,0.03)']}
+              valueColor={colors.gold}
+            />
           </View>
 
           {/* ── Flow Card ── */}
@@ -234,7 +251,7 @@ export default function CheckInsScreen() {
             <View style={[s.flowCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder, borderRadius: r(22) }]}>
               <Text style={[s.flowHourRange, { color: colors.text3 }]}>{formatHourRange(activeHour)}</Text>
               <Text style={[s.flowSubNote, { color: colors.text3 }]}>This hour is marked unavailable.</Text>
-              {isFree && <SponsorLine colors={colors} skinFonts={skinFonts} />}
+              {isFree && <SponsorPlaceholder />}
             </View>
 
           ) : isFuture ? (
@@ -245,20 +262,30 @@ export default function CheckInsScreen() {
 
           ) : step === 'done' && existingRecord ? (
             <LinearGradient
-              colors={existingRecord.won
+              colors={existingRecord.hour_result === 'win'
                 ? ['rgba(255,94,26,0.18)', 'rgba(255,94,26,0.05)']
                 : ['rgba(60,79,101,0.22)', 'rgba(60,79,101,0.06)']}
-              style={[s.flowCard, { borderColor: existingRecord.won ? flowBorderWon : flowBorderLost, borderRadius: r(22) }]}
+              style={[s.flowCard, {
+                borderColor: existingRecord.hour_result === 'win' ? colors.molten : colors.steel,
+                borderRadius: r(22),
+              }]}
             >
               <View style={s.flowDoneHeader}>
                 <Text style={[s.flowHourRange, { color: colors.text3 }]}>{formatHourRange(activeHour)}</Text>
-                <View style={[s.resultBadge, { borderColor: existingRecord.won ? flowBorderWon : flowBorderLost, borderRadius: r(10) }]}>
-                  <Text style={[s.resultBadgeText, { color: existingRecord.won ? flowBorderWon : flowBorderLost }]}>
-                    {existingRecord.won ? 'WON' : `LOST · ${existingRecord.rating}/5`}
+                <View style={[s.resultBadge, {
+                  borderColor: existingRecord.hour_result === 'win' ? colors.molten : colors.steel,
+                  borderRadius: r(10),
+                }]}>
+                  <Text style={[s.resultBadgeText, {
+                    color: existingRecord.hour_result === 'win' ? colors.molten : colors.steel,
+                  }]}>
+                    {existingRecord.hour_result === 'win'
+                      ? 'WON'
+                      : `LOST · ${existingRecord.intensity_rating ?? '—'}/5`}
                   </Text>
                 </View>
               </View>
-              {existingRecord.won && (
+              {existingRecord.hour_result === 'win' && (
                 <Image source={require('../../assets/checkmark-neon.png')} style={s.checkImg} resizeMode="contain" />
               )}
               {existingRecord.nextHourPlan ? (
@@ -270,7 +297,7 @@ export default function CheckInsScreen() {
               <TouchableOpacity style={s.relogBtn} onPress={() => setStep('ask')} activeOpacity={0.75}>
                 <Text style={[s.relogBtnText, { color: colors.text4 }]}>RE-LOG THIS HOUR</Text>
               </TouchableOpacity>
-              {isFree && <SponsorLine colors={colors} skinFonts={skinFonts} />}
+              {isFree && <SponsorPlaceholder />}
             </LinearGradient>
 
           ) : step === 'ask' ? (
@@ -279,48 +306,98 @@ export default function CheckInsScreen() {
               style={[s.flowCard, { borderColor: colors.molten, borderRadius: r(22) }]}
             >
               <Text style={[s.flowHourRange, { color: colors.text3 }]}>{formatHourRange(activeHour)}</Text>
-              <Text style={[s.flowQuestion, { color: colors.text1, fontFamily: skinFonts.titleFontFamily, fontWeight: skinFonts.titleFontWeight }]}>
+              <Text style={[s.flowQuestion, {
+                color: colors.text1,
+                fontFamily: skinFonts.titleFontFamily,
+                fontWeight: skinFonts.titleFontWeight,
+              }]}>
                 Did you win this hour?
               </Text>
               <View style={s.flowBtnRow}>
-                <TouchableOpacity style={s.yesBtnWrap} onPress={() => { setTempWon(true); setStep('plan'); }} activeOpacity={0.8}>
-                  <LinearGradient colors={[colors.molten, '#FF8C4A']} style={[s.yesBtn, { borderRadius: r(14) }]}>
-                    <Text style={[s.yesBtnText, { fontFamily: skinFonts.fontFamily }]}>YES</Text>
-                  </LinearGradient>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[s.noBtn, { borderColor: colors.steel, borderRadius: r(14) }]}
-                  onPress={() => { setTempWon(false); setStep('why'); }}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[s.noBtnText, { color: colors.steel, fontFamily: skinFonts.fontFamily }]}>NO</Text>
-                </TouchableOpacity>
+                <EliteButton
+                  label="YES"
+                  variant="primary"
+                  onPress={() => { setTempResult('win'); setStep('plan'); }}
+                />
+                <EliteButton
+                  label="NO"
+                  variant="ghost"
+                  onPress={() => { setTempResult('loss'); setStep('loss_reason'); }}
+                />
               </View>
-              {isFree && <SponsorLine colors={colors} skinFonts={skinFonts} />}
+              {isFree && <SponsorPlaceholder />}
             </LinearGradient>
 
-          ) : step === 'why' ? (
+          ) : step === 'plan' ? (
+            <LinearGradient
+              colors={['rgba(255,94,26,0.15)', 'rgba(255,94,26,0.04)']}
+              style={[s.flowCard, { borderColor: colors.molten, borderRadius: r(22) }]}
+            >
+              <Text style={[s.flowWonFlag, { color: colors.molten, fontFamily: skinFonts.fontFamily }]}>✓ HOUR WON</Text>
+              <Text style={[s.flowQuestion, {
+                color: colors.text1,
+                fontFamily: skinFonts.titleFontFamily,
+                fontWeight: skinFonts.titleFontWeight,
+              }]}>
+                What do you need to do to win the next hour?
+              </Text>
+              <TextInput
+                style={[s.planInput, {
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.cardBorder,
+                  color: colors.text1,
+                  borderRadius: r(14),
+                }]}
+                placeholder="Type your plan…"
+                placeholderTextColor={colors.text4}
+                value={plan}
+                onChangeText={setPlan}
+                multiline
+                returnKeyType="done"
+              />
+              <TouchableOpacity
+                style={[s.submitWrap, !plan.trim() && { opacity: 0.4 }]}
+                onPress={() => submitWin(plan)}
+                disabled={!plan.trim()}
+                activeOpacity={0.8}
+              >
+                <LinearGradient colors={[colors.molten, '#FF8C4A']} style={[s.submitBtn, { borderRadius: r(14) }]}>
+                  <Text style={[s.submitBtnText, { fontFamily: skinFonts.fontFamily }]}>LOCK IT IN</Text>
+                </LinearGradient>
+              </TouchableOpacity>
+            </LinearGradient>
+
+          ) : step === 'loss_reason' ? (
             <LinearGradient
               colors={['rgba(60,79,101,0.22)', 'rgba(60,79,101,0.06)']}
               style={[s.flowCard, { borderColor: colors.steel, borderRadius: r(22) }]}
             >
               <Text style={[s.flowLostFlag, { color: colors.steel, fontFamily: skinFonts.fontFamily }]}>HOUR LOST</Text>
-              <Text style={[s.flowQuestion, { color: colors.text1, fontFamily: skinFonts.titleFontFamily, fontWeight: skinFonts.titleFontWeight }]}>
-                Why did you not win this last hour?
+              <Text style={[s.flowQuestion, {
+                color: colors.text1,
+                fontFamily: skinFonts.titleFontFamily,
+                fontWeight: skinFonts.titleFontWeight,
+              }]}>
+                Why did you not win this hour?
               </Text>
               <TextInput
-                style={[s.planInput, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder, color: colors.text1, borderRadius: r(14) }]}
+                style={[s.planInput, {
+                  backgroundColor: colors.inputBg,
+                  borderColor: colors.cardBorder,
+                  color: colors.text1,
+                  borderRadius: r(14),
+                }]}
                 placeholder="Be honest with yourself…"
                 placeholderTextColor={colors.text4}
-                value={tempWhy}
-                onChangeText={setTempWhy}
+                value={lossReason}
+                onChangeText={setLossReason}
                 multiline
                 returnKeyType="done"
               />
               <TouchableOpacity
-                style={[s.submitWrap, !tempWhy.trim() && { opacity: 0.4 }]}
+                style={[s.submitWrap, !lossReason.trim() && { opacity: 0.4 }]}
                 onPress={() => setStep('rate')}
-                disabled={!tempWhy.trim()}
+                disabled={!lossReason.trim()}
                 activeOpacity={0.8}
               >
                 <LinearGradient colors={[colors.steel, colors.molten]} style={[s.submitBtn, { borderRadius: r(14) }]}>
@@ -335,8 +412,12 @@ export default function CheckInsScreen() {
               style={[s.flowCard, { borderColor: colors.steel, borderRadius: r(22) }]}
             >
               <Text style={[s.flowLostFlag, { color: colors.steel, fontFamily: skinFonts.fontFamily }]}>HOUR LOST</Text>
-              <Text style={[s.flowQuestion, { color: colors.text1, fontFamily: skinFonts.titleFontFamily, fontWeight: skinFonts.titleFontWeight }]}>
-                What would you rate this past hour?
+              <Text style={[s.flowQuestion, {
+                color: colors.text1,
+                fontFamily: skinFonts.titleFontFamily,
+                fontWeight: skinFonts.titleFontWeight,
+              }]}>
+                Rate this hour (1–5)
               </Text>
               <View style={s.ratingRow}>
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -347,7 +428,7 @@ export default function CheckInsScreen() {
                       borderRadius: r(14),
                       backgroundColor: tempRating === n ? 'rgba(255,94,26,0.2)' : colors.inputBg,
                     }]}
-                    onPress={() => { setTempRating(n); setStep('improve'); }}
+                    onPress={() => submitLoss(lossReason, n)}
                     activeOpacity={0.8}
                   >
                     <Text style={[s.ratingNum, { color: tempRating === n ? colors.molten : colors.text3 }]}>{n}</Text>
@@ -355,74 +436,12 @@ export default function CheckInsScreen() {
                 ))}
               </View>
             </LinearGradient>
-
-          ) : step === 'improve' ? (
-            <LinearGradient
-              colors={['rgba(60,79,101,0.22)', 'rgba(60,79,101,0.06)']}
-              style={[s.flowCard, { borderColor: colors.steel, borderRadius: r(22) }]}
-            >
-              <Text style={[s.flowLostFlag, { color: colors.steel, fontFamily: skinFonts.fontFamily }]}>
-                HOUR LOST · {tempRating}/5
-              </Text>
-              <Text style={[s.flowQuestion, { color: colors.text1, fontFamily: skinFonts.titleFontFamily, fontWeight: skinFonts.titleFontWeight }]}>
-                What do you have to do in order to win the next hour?
-              </Text>
-              <TextInput
-                style={[s.planInput, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder, color: colors.text1, borderRadius: r(14) }]}
-                placeholder="Type your plan…"
-                placeholderTextColor={colors.text4}
-                value={plan}
-                onChangeText={setPlan}
-                multiline
-                returnKeyType="done"
-              />
-              <TouchableOpacity
-                style={[s.submitWrap, !plan.trim() && { opacity: 0.4 }]}
-                onPress={() => submitLog(false, tempWhy, tempRating!, plan)}
-                disabled={!plan.trim()}
-                activeOpacity={0.8}
-              >
-                <LinearGradient colors={[colors.steel, colors.molten]} style={[s.submitBtn, { borderRadius: r(14) }]}>
-                  <Text style={[s.submitBtnText, { fontFamily: skinFonts.fontFamily }]}>LOCK IT IN</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </LinearGradient>
-
-          ) : step === 'plan' ? (
-            <LinearGradient
-              colors={['rgba(255,94,26,0.15)', 'rgba(255,94,26,0.04)']}
-              style={[s.flowCard, { borderColor: colors.molten, borderRadius: r(22) }]}
-            >
-              <Text style={[s.flowWonFlag, { color: colors.molten, fontFamily: skinFonts.fontFamily }]}>✓ HOUR WON</Text>
-              <Text style={[s.flowQuestion, { color: colors.text1, fontFamily: skinFonts.titleFontFamily, fontWeight: skinFonts.titleFontWeight }]}>
-                What do you need to do to win the next hour?
-              </Text>
-              <TextInput
-                style={[s.planInput, { backgroundColor: colors.inputBg, borderColor: colors.cardBorder, color: colors.text1, borderRadius: r(14) }]}
-                placeholder="Type your plan…"
-                placeholderTextColor={colors.text4}
-                value={plan}
-                onChangeText={setPlan}
-                multiline
-                returnKeyType="done"
-              />
-              <TouchableOpacity
-                style={[s.submitWrap, !plan.trim() && { opacity: 0.4 }]}
-                onPress={() => submitLog(true, '', undefined, plan)}
-                disabled={!plan.trim()}
-                activeOpacity={0.8}
-              >
-                <LinearGradient colors={[colors.molten, '#FF8C4A']} style={[s.submitBtn, { borderRadius: r(14) }]}>
-                  <Text style={[s.submitBtnText, { fontFamily: skinFonts.fontFamily }]}>LOCK IT IN</Text>
-                </LinearGradient>
-              </TouchableOpacity>
-            </LinearGradient>
           ) : null}
 
           {/* Past Logged Hours */}
           {loggedHours.length > 0 && (
             <>
-              <Text style={[s.sectionLabel, { color: colors.text4, fontFamily: skinFonts.fontFamily }]}>Past Hours</Text>
+              <SectionHeader label="Past Hours" color={colors.text4} style={{ fontFamily: skinFonts.fontFamily }} />
               {loggedHours.map((record) => (
                 <TouchableOpacity
                   key={record.hour}
@@ -432,21 +451,27 @@ export default function CheckInsScreen() {
                 >
                   <LinearGradient
                     colors={
-                      record.won
+                      record.hour_result === 'win'
                         ? ['rgba(255,94,26,0.12)', 'rgba(255,94,26,0.04)']
                         : ['rgba(60,79,101,0.2)', 'rgba(60,79,101,0.06)']
                     }
                     style={[s.hourRow, {
                       borderRadius: r(16),
-                      borderColor: record.won ? 'rgba(255,94,26,0.4)' : colors.cardBorder,
+                      borderColor: record.hour_result === 'win' ? 'rgba(255,94,26,0.4)' : colors.cardBorder,
                     }]}
                   >
                     <Text style={[s.hourLabel, { color: colors.text1, fontFamily: skinFonts.fontFamily }]}>
                       {formatHour(record.hour)}
                     </Text>
-                    <View style={[s.hourBadge, { borderColor: record.won ? colors.molten : colors.steel, borderRadius: r(10) }]}>
-                      <Text style={[s.hourBadgeText, { color: record.won ? colors.molten : colors.steel, fontFamily: skinFonts.fontFamily }]}>
-                        {record.won ? 'WON' : `LOST ${record.rating}/5`}
+                    <View style={[s.hourBadge, {
+                      borderColor: record.hour_result === 'win' ? colors.molten : colors.steel,
+                      borderRadius: r(10),
+                    }]}>
+                      <Text style={[s.hourBadgeText, {
+                        color: record.hour_result === 'win' ? colors.molten : colors.steel,
+                        fontFamily: skinFonts.fontFamily,
+                      }]}>
+                        {record.hour_result === 'win' ? 'WON' : `LOST ${record.intensity_rating ?? '—'}/5`}
                       </Text>
                     </View>
                   </LinearGradient>
@@ -456,28 +481,32 @@ export default function CheckInsScreen() {
           )}
 
           {/* HH:55 Banner */}
-          <View style={[s.resetNote, { backgroundColor: colors.cardBg, borderColor: 'rgba(255,179,0,0.3)', borderRadius: r(16) }]}>
+          <View style={[s.resetNote, {
+            backgroundColor: colors.cardBg,
+            borderColor: 'rgba(255,179,0,0.3)',
+            borderRadius: r(16),
+          }]}>
             <Text style={[s.resetNoteLabel, { color: colors.gold, fontFamily: skinFonts.fontFamily }]}>HH:55 RESET RITUAL</Text>
             <Text style={[s.resetNoteBody, { color: colors.text2, fontFamily: skinFonts.fontFamily }]}>
               At :55 of every hour — pause, assess, log. Then go again.
             </Text>
           </View>
         </ScrollView>
-      </View>
+      </ArenaContainer>
     </KeyboardAvoidingView>
   );
 }
 
-function SponsorLine({ colors, skinFonts }: { colors: any; skinFonts: any }) {
+// Structural placeholder — replaced by PartnerStore in sponsor phase
+function SponsorPlaceholder() {
   return (
-    <Text style={[s.sponsorBanner, { color: colors.text4, fontFamily: skinFonts.fontFamily }]}>
-      This hour was brought to you by [Brand/Company]
+    <Text style={s.sponsorBanner}>
+      This hour was brought to you by [Partner]
     </Text>
   );
 }
 
 const s = StyleSheet.create({
-  root:    { flex: 1 },
   content: { padding: 24, paddingTop: 20, paddingBottom: 48 },
 
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 20 },
@@ -489,9 +518,6 @@ const s = StyleSheet.create({
   beastTimer: { fontSize: 18, fontWeight: '800', letterSpacing: 1 },
 
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
-  statCard: { flex: 1, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(60,79,101,0.4)' },
-  statVal:  { fontSize: 24, fontWeight: '800', marginBottom: 4 },
-  statLbl:  { fontSize: 9, fontWeight: '700', letterSpacing: 0.8 },
 
   flowCard:      { padding: 22, borderWidth: 1.5, marginBottom: 24, backgroundColor: 'transparent' },
   flowHourRange: { fontSize: 11, fontWeight: '700', letterSpacing: 0.5, marginBottom: 12 },
@@ -501,11 +527,6 @@ const s = StyleSheet.create({
   flowLostFlag:  { fontSize: 10, fontWeight: '800', letterSpacing: 1.2, marginBottom: 10 },
 
   flowBtnRow: { flexDirection: 'row', gap: 12 },
-  yesBtnWrap: { flex: 1 },
-  yesBtn:     { paddingVertical: 16, alignItems: 'center' },
-  yesBtnText: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 1 },
-  noBtn:      { flex: 1, paddingVertical: 16, alignItems: 'center', borderWidth: 1.5 },
-  noBtnText:  { fontSize: 15, fontWeight: '700', letterSpacing: 1 },
 
   ratingRow: { flexDirection: 'row', gap: 8 },
   ratingBtn: { flex: 1, paddingVertical: 16, alignItems: 'center', borderWidth: 1 },
@@ -526,9 +547,8 @@ const s = StyleSheet.create({
   relogBtn:        { alignItems: 'center', paddingVertical: 8, marginTop: 4 },
   relogBtnText:    { fontSize: 11, fontWeight: '700', letterSpacing: 0.8 },
 
-  sponsorBanner: { fontSize: 10, marginTop: 12, letterSpacing: 0.3 },
+  sponsorBanner: { fontSize: 10, marginTop: 12, letterSpacing: 0.3, color: 'rgba(255,255,255,0.2)' },
 
-  sectionLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1, marginBottom: 12, marginTop: 4, textTransform: 'uppercase' },
   hourRowWrap:  { marginBottom: 8 },
   hourRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 16, borderWidth: 1 },
   hourLabel:     { fontSize: 15, fontWeight: '700', flex: 1 },

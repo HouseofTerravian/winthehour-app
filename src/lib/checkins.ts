@@ -1,12 +1,14 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export type CheckInRecord = {
-  date: string;         // 'YYYY-MM-DD'
-  hour: number;         // 0-23
-  won: boolean;
-  rating?: number;      // 1-5, only when won = false
-  nextHourPlan: string;
-  loggedAt: string;     // ISO timestamp
+  date: string;                    // 'YYYY-MM-DD'
+  hour: number;                    // 0-23
+  hour_result: 'win' | 'loss';
+  intensity_rating?: number;       // 1-5, only on loss
+  loss_reason_category?: string;   // reserved for future expansion
+  loss_reason_text?: string;       // freeform loss reason, only on loss
+  nextHourPlan?: string;           // next hour intention, only on win
+  loggedAt: string;                // ISO timestamp
 };
 
 const CHECKINS_KEY = '@wth_checkins';
@@ -19,7 +21,15 @@ export function todayStr(): string {
 export async function loadCheckIns(): Promise<CheckInRecord[]> {
   try {
     const raw = await AsyncStorage.getItem(CHECKINS_KEY);
-    return raw ? JSON.parse(raw) : [];
+    if (!raw) return [];
+    const records = JSON.parse(raw) as any[];
+    // Migrate legacy records that used `won: boolean`
+    return records.map((r) => {
+      if ('won' in r && !('hour_result' in r)) {
+        return { ...r, hour_result: r.won ? 'win' : 'loss' } as CheckInRecord;
+      }
+      return r as CheckInRecord;
+    });
   } catch {
     return [];
   }

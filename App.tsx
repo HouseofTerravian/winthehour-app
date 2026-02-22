@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider, useAuth } from './src/context/AuthContext';
 import { ThemeProvider, useTheme } from './src/context/ThemeContext';
+import { SponsorProvider } from './src/context/SponsorContext';
 import TabNavigator from './src/navigation/TabNavigator';
 import SignInScreen from './src/screens/auth/SignInScreen';
 import SignUpScreen from './src/screens/auth/SignUpScreen';
@@ -42,9 +43,11 @@ function AppContent() {
   return (
     <>
       <StatusBar style={isDark ? 'light' : 'dark'} backgroundColor={colors.charcoal} />
-      <AuthProvider>
-        <RootNavigator />
-      </AuthProvider>
+      <SponsorProvider>
+        <AuthProvider>
+          <RootNavigator />
+        </AuthProvider>
+      </SponsorProvider>
     </>
   );
 }

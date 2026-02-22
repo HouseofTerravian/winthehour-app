@@ -180,20 +180,6 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        {/* Quick Stats */}
-        <View style={styles.statsRow}>
-          {[
-            { label: 'Day Streak', value: String(profile?.streak ?? 0), color: Colors.molten },
-            { label: 'Hours Won', value: '0', color: Colors.white },
-            { label: 'Total XP', value: (profile?.xp ?? 0).toLocaleString(), color: Colors.gold },
-          ].map((s) => (
-            <View key={s.label} style={styles.statPill}>
-              <Text style={[styles.statPillValue, { color: s.color }]}>{s.value}</Text>
-              <Text style={styles.statPillLabel}>{s.label}</Text>
-            </View>
-          ))}
-        </View>
-
         {/* Profile Form */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
@@ -575,23 +561,6 @@ const styles = StyleSheet.create({
     borderColor: Colors.molten,
   },
   tierBadgeText: { color: Colors.molten, fontSize: 11, fontWeight: '700', letterSpacing: 1.2 },
-
-  statsRow: {
-    flexDirection: 'row',
-    gap: 10,
-    marginBottom: 32,
-  },
-  statPill: {
-    flex: 1,
-    backgroundColor: Colors.slate,
-    borderRadius: 14,
-    padding: 14,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(60,79,101,0.5)',
-  },
-  statPillValue: { fontSize: 22, fontWeight: '800', marginBottom: 2 },
-  statPillLabel: { fontSize: 10, fontWeight: '600', color: Colors.muted, letterSpacing: 0.5 },
 
   section: {
     backgroundColor: Colors.slate,

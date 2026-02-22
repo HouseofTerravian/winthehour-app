@@ -9,8 +9,8 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useTheme } from '../context/ThemeContext';
+import { MatteCard } from '../components/ui';
 import {
   loadCheckIns,
   loadUnavailableHours,
@@ -89,34 +89,42 @@ export default function TodayScreen() {
             {dateStr}
           </Text>
 
-          {/* Hours Overview */}
+          {/* Hours Overview — MatteCard rows, ~30% reduced glow */}
           <View style={s.hoursSection}>
             {hours.map((hour) => {
               const record    = todayIns.find((r) => r.hour === hour);
               const isUnav    = unavailable.includes(hour);
               const isCurrent = hour === currentHour;
               const isFuture  = hour > currentHour;
+              const isWin     = record?.hour_result === 'win';
+
+              // Gradient colors with ~30% reduced alpha vs original
+              const gradColors: [string, string] = isCurrent
+                ? ['rgba(255,94,26,0.15)', 'rgba(255,94,26,0.055)']
+                : isWin
+                ? ['rgba(255,94,26,0.085)', 'rgba(255,94,26,0.028)']
+                : record
+                ? ['rgba(60,79,101,0.13)', 'rgba(60,79,101,0.042)']
+                : isUnav
+                ? ['rgba(255,255,255,0.015)', 'rgba(255,255,255,0.008)']
+                : [colors.rowBg, colors.rowBg];
+
+              const borderCol = isCurrent
+                ? colors.molten
+                : isWin
+                ? 'rgba(255,94,26,0.25)'
+                : colors.cardBorder;
 
               return (
-                <LinearGradient
+                <MatteCard
                   key={hour}
-                  colors={
-                    isCurrent
-                      ? ['rgba(255,94,26,0.22)', 'rgba(255,94,26,0.08)']
-                      : record?.won
-                      ? ['rgba(255,94,26,0.12)', 'rgba(255,94,26,0.04)']
-                      : record
-                      ? ['rgba(60,79,101,0.18)', 'rgba(60,79,101,0.06)']
-                      : isUnav
-                      ? ['rgba(255,255,255,0.02)', 'rgba(255,255,255,0.01)']
-                      : [colors.rowBg, colors.rowBg]
-                  }
-                  style={[s.hourRow, {
-                    borderRadius:  r(14),
-                    borderColor:   isCurrent ? colors.molten : record?.won ? 'rgba(255,94,26,0.35)' : colors.cardBorder,
-                    borderWidth:   isCurrent ? 1.5 : 1,
-                    opacity:       isFuture && !isCurrent ? 0.45 : 1,
-                  }]}
+                  gradientColors={gradColors}
+                  borderColor={borderCol}
+                  borderWidth={isCurrent ? 1.5 : 1}
+                  style={{
+                    borderRadius: r(14),
+                    opacity: isFuture && !isCurrent ? 0.45 : 1,
+                  }}
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={[s.hourLabel, {
@@ -138,9 +146,9 @@ export default function TodayScreen() {
                   {isUnav ? (
                     <Text style={[s.statusText, { color: colors.text4, fontFamily: skinFonts.fontFamily }]}>UNAVAIL.</Text>
                   ) : record ? (
-                    <View style={[s.badge, { borderColor: record.won ? colors.molten : colors.steel, borderRadius: r(8) }]}>
-                      <Text style={[s.badgeText, { color: record.won ? colors.molten : colors.steel, fontFamily: skinFonts.fontFamily }]}>
-                        {record.won ? 'WON' : `LOST ${record.rating ?? ''}/5`}
+                    <View style={[s.badge, { borderColor: isWin ? colors.molten : colors.steel, borderRadius: r(8) }]}>
+                      <Text style={[s.badgeText, { color: isWin ? colors.molten : colors.steel, fontFamily: skinFonts.fontFamily }]}>
+                        {isWin ? 'WON' : `LOST ${record.intensity_rating ?? ''}/5`}
                       </Text>
                     </View>
                   ) : isCurrent ? (
@@ -154,12 +162,12 @@ export default function TodayScreen() {
                       <Text style={[s.badgeText, { color: colors.text4 }]}>MISSED</Text>
                     </View>
                   )}
-                </LinearGradient>
+                </MatteCard>
               );
             })}
           </View>
 
-          {/* M.Y.B.E.D. */}
+          {/* M.Y.B.E.D. — increased top spacing for breathing room */}
           <View style={[s.mybedCard, { backgroundColor: colors.cardBg, borderColor: colors.cardBorder, borderRadius: r(22) }]}>
             <View style={s.mybedHeader}>
               <View>
@@ -234,15 +242,7 @@ const s = StyleSheet.create({
   title:   { fontSize: 36, marginBottom: 2 },
   dateStr: { fontSize: 13, marginBottom: 24 },
 
-  hoursSection: { gap: 8, marginBottom: 28 },
-  hourRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 13,
-    borderWidth: 1,
-    gap: 12,
-  },
+  hoursSection: { gap: 8, marginBottom: 44 }, // increased from 28 → 44 for M.Y.B.E.D. breathing room
   hourLabel:   { fontSize: 15, fontWeight: '700' },
   planSnippet: { fontSize: 11, marginTop: 2 },
   statusText:  { fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },
