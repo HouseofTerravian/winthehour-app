@@ -14,6 +14,21 @@ type UpdateEntry = {
 
 const UPDATES: UpdateEntry[] = [
   {
+    version: '0.6.2',
+    date: '2026-02-21',
+    tag: 'BEAST MODE',
+    tagColor: Colors.molten,
+    items: [
+      'Beast Mode now anchors to absolute clock boundaries: :00, :15, :30, :45',
+      'Timer is no longer relative to toggle time — aligned to system clock',
+      'On enable: computes exact ms to next quarter-hour and fires a precise setTimeout',
+      'After first trigger: fixed 15-minute setInterval — no recalculation, no drift',
+      'Display countdown reflects real time remaining to next quarter anchor',
+      'App foreground resume: re-aligns to clock via AppState listener',
+      'Trigger at :15 exactly — institutional, external, non-negotiable',
+    ],
+  },
+  {
     version: '0.6.1',
     date: '2026-02-21',
     tag: 'REFINEMENT',
