@@ -87,6 +87,11 @@ export default function StatisticsScreen() {
         {/* Bar Chart */}
         <View style={[styles.chartCard, { backgroundColor: colors.slate }]}>
           <Text style={[styles.cardTitle, { color: colors.text1 }]}>Hours Won per Day</Text>
+          {totalWon === 0 ? (
+            <Text style={[styles.emptyState, { color: colors.text4, fontFamily: skinFonts.fontFamily }]}>
+              Win Hours to populate your graph.
+            </Text>
+          ) : (
           <View style={styles.chart}>
             {WEEKLY_DATA.map((d, i) => {
               const fillH = maxWon > 0 ? Math.round((d.won / maxWon) * BAR_TRACK_H) : 0;
@@ -126,6 +131,7 @@ export default function StatisticsScreen() {
               <Text style={[styles.legendText, { color: colors.text4 }]}>{'<'}50%</Text>
             </View>
           </View>
+          )}
         </View>
 
         {/* Tier Progress */}
@@ -261,6 +267,7 @@ const styles = StyleSheet.create({
   legendItem: { flexDirection: 'row', alignItems: 'center', gap: 5 },
   legendDot: { width: 8, height: 8, borderRadius: 4 },
   legendText: { fontSize: 11, color: 'rgba(255,255,255,0.35)' },
+  emptyState: { fontSize: 13, lineHeight: 20, textAlign: 'center', paddingVertical: 32, color: 'rgba(255,255,255,0.25)' },
 
   tierCard: {
     backgroundColor: Colors.slate,

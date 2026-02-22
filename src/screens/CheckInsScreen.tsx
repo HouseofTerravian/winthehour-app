@@ -201,6 +201,7 @@ export default function CheckInsScreen() {
               <Text style={[s.subtitle, { color: colors.text3, fontFamily: skinFonts.fontFamily }]}>
                 Win This Hour. Every hour.
               </Text>
+              <Text style={s.timeLayerLabel}>60M</Text>
             </View>
             <View style={[s.beastToggleWrap, {
               backgroundColor: colors.cardBg,
@@ -423,15 +424,11 @@ export default function CheckInsScreen() {
                 {[1, 2, 3, 4, 5].map((n) => (
                   <TouchableOpacity
                     key={n}
-                    style={[s.ratingBtn, {
-                      borderColor: tempRating === n ? colors.molten : colors.cardBorder,
-                      borderRadius: r(14),
-                      backgroundColor: tempRating === n ? 'rgba(255,94,26,0.2)' : colors.inputBg,
-                    }]}
+                    style={s.ratingBtn}
                     onPress={() => submitLoss(lossReason, n)}
-                    activeOpacity={0.8}
+                    activeOpacity={0.6}
                   >
-                    <Text style={[s.ratingNum, { color: tempRating === n ? colors.molten : colors.text3 }]}>{n}</Text>
+                    <Text style={[s.ratingNum, { color: tempRating === n ? colors.molten : 'rgba(255,255,255,0.3)' }]}>{n}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -528,9 +525,11 @@ const s = StyleSheet.create({
 
   flowBtnRow: { flexDirection: 'row', gap: 12 },
 
+  timeLayerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: 'rgba(255,255,255,0.18)', marginTop: 3 },
+
   ratingRow: { flexDirection: 'row', gap: 8 },
-  ratingBtn: { flex: 1, paddingVertical: 16, alignItems: 'center', borderWidth: 1 },
-  ratingNum: { fontSize: 20, fontWeight: '800' },
+  ratingBtn: { flex: 1, paddingVertical: 18, alignItems: 'center', backgroundColor: 'transparent' },
+  ratingNum: { fontSize: 22, fontWeight: '800' },
 
   planInput:     { borderWidth: 1, padding: 14, fontSize: 15, minHeight: 88, textAlignVertical: 'top', marginBottom: 14 },
   submitWrap:    {},

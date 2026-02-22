@@ -104,7 +104,7 @@ export default function FlowsScreen() {
         {/* Morning Flow */}
         <TouchableOpacity onPress={() => setActiveFlow('morning')} activeOpacity={0.88} style={{ marginBottom: 16 }}>
           <LinearGradient
-            colors={['rgba(255,94,26,0.18)', 'rgba(255,94,26,0.04)', `${colors.charcoal}FF`]}
+            colors={['rgba(255,94,26,0.12)', 'rgba(255,94,26,0.04)', `${colors.charcoal}FF`]}
             locations={[0, 0.5, 1]}
             style={[styles.flowCard, { borderColor: Colors.molten }]}
           >
@@ -131,7 +131,7 @@ export default function FlowsScreen() {
 
         {/* Evening Flow */}
         <TouchableOpacity onPress={() => setActiveFlow('evening')} activeOpacity={0.88}>
-          <View style={[styles.flowCard, { backgroundColor: colors.slate, borderColor: 'rgba(255,179,0,0.35)' }]}>
+          <View style={[styles.flowCard, { backgroundColor: colors.slate, borderColor: 'rgba(255,179,0,0.55)' }]}>
             <View style={styles.flowCardTopRow}>
               <View style={[styles.eveningIconWrap, { backgroundColor: 'rgba(255,179,0,0.1)' }]}>
                 <Text style={styles.eveningIcon}>🌙</Text>
@@ -165,7 +165,7 @@ const styles = StyleSheet.create({
   title:   { fontSize: 36, fontWeight: '800', marginBottom: 4 },
   subtitle:{ fontSize: 14, marginBottom: 28 },
 
-  flowCard:        { borderRadius: 24, padding: 24, borderWidth: 1.5 },
+  flowCard:        { borderRadius: 24, padding: 24, borderWidth: 2 },
   flowCardTopRow:  { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   flowCardImage:   { width: 56, height: 56, borderRadius: 16 },
   eveningIconWrap: { width: 56, height: 56, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

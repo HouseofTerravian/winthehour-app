@@ -42,6 +42,7 @@ export default function HomeScreen() {
               style={styles.logo}
               resizeMode="contain"
             />
+            <Text style={styles.timeLayerLabel}>LIFETIME</Text>
           </View>
           <View style={[styles.tierBadge, { borderColor: colors.steel, backgroundColor: colors.faint }]}>
             <Text style={[styles.tierText, { color: colors.muted }]}>{tier.toUpperCase()}</Text>
@@ -51,21 +52,21 @@ export default function HomeScreen() {
         {/* Stats Row */}
         <View style={styles.statsRow}>
           <LinearGradient
-            colors={['rgba(255,94,26,0.15)', 'rgba(255,94,26,0.05)']}
+            colors={['rgba(255,94,26,0.10)', 'rgba(255,94,26,0.03)']}
             style={styles.statCard}
           >
             <Text style={[styles.statValue, { color: Colors.molten }]}>{streak}</Text>
             <Text style={[styles.statLabel, { color: colors.text3 }]}>Day Streak</Text>
           </LinearGradient>
           <LinearGradient
-            colors={['rgba(255,179,0,0.15)', 'rgba(255,179,0,0.05)']}
+            colors={['rgba(255,179,0,0.10)', 'rgba(255,179,0,0.03)']}
             style={styles.statCard}
           >
             <Text style={[styles.statValue, { color: Colors.gold }]}>{xp.toLocaleString()}</Text>
             <Text style={[styles.statLabel, { color: colors.text3 }]}>Total XP</Text>
           </LinearGradient>
           <LinearGradient
-            colors={['rgba(255,255,255,0.08)', 'rgba(255,255,255,0.02)']}
+            colors={['rgba(255,255,255,0.05)', 'rgba(255,255,255,0.015)']}
             style={styles.statCard}
           >
             <Text style={[styles.statValue, { color: colors.text1 }]}>0</Text>
@@ -99,7 +100,6 @@ export default function HomeScreen() {
             </View>
             <View style={styles.ritualMeta}>
               <Text style={[styles.ritualMetaText, { color: colors.text4 }]}>4 steps · +100 XP · ~5 min</Text>
-              <Text style={styles.ritualMetaDot}>AVAILABLE NOW</Text>
             </View>
           </LinearGradient>
         </TouchableOpacity>
@@ -170,8 +170,10 @@ const styles = StyleSheet.create({
   tierBadge:   { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, marginTop: 8 },
   tierText:    { fontSize: 10, fontWeight: '700', letterSpacing: 1 },
 
+  timeLayerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: 'rgba(255,255,255,0.18)', marginTop: 3 },
+
   statsRow: { flexDirection: 'row', gap: 10, marginBottom: 32 },
-  statCard: { flex: 1, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(60,79,101,0.4)', alignItems: 'center' },
+  statCard: { flex: 1, borderRadius: 16, padding: 16, borderWidth: 1, borderColor: 'rgba(60,79,101,0.28)', alignItems: 'center' },
   statValue:{ fontSize: 28, fontWeight: '800', marginBottom: 4 },
   statLabel:{ fontSize: 10, fontWeight: '600', letterSpacing: 0.5, textAlign: 'center' },
 
@@ -189,7 +191,6 @@ const styles = StyleSheet.create({
   laterBtnText:   { fontSize: 12, fontWeight: '700', letterSpacing: 0.8 },
   ritualMeta:     { flexDirection: 'row', justifyContent: 'space-between', marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: 'rgba(255,94,26,0.15)' },
   ritualMetaText: { fontSize: 11 },
-  ritualMetaDot:  { fontSize: 10, fontWeight: '700', color: Colors.molten, letterSpacing: 0.5 },
 
   resetBanner: { borderRadius: 18, padding: 20, marginBottom: 24, borderWidth: 1, borderColor: 'rgba(255,179,0,0.25)', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   resetLabel:  { fontSize: 11, fontWeight: '700', color: Colors.gold, letterSpacing: 1, marginBottom: 4 },

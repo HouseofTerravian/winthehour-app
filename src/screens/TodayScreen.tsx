@@ -88,6 +88,7 @@ export default function TodayScreen() {
           <Text style={[s.dateStr, { color: colors.text3, fontFamily: skinFonts.fontFamily }]}>
             {dateStr}
           </Text>
+          <Text style={s.timeLayerLabel}>24H</Text>
 
           {/* Hours Overview — MatteCard rows, ~30% reduced glow */}
           <View style={s.hoursSection}>
@@ -100,13 +101,13 @@ export default function TodayScreen() {
 
               // Gradient colors with ~30% reduced alpha vs original
               const gradColors: [string, string] = isCurrent
-                ? ['rgba(255,94,26,0.15)', 'rgba(255,94,26,0.055)']
+                ? ['rgba(255,94,26,0.135)', 'rgba(255,94,26,0.05)']
                 : isWin
-                ? ['rgba(255,94,26,0.085)', 'rgba(255,94,26,0.028)']
+                ? ['rgba(255,94,26,0.077)', 'rgba(255,94,26,0.025)']
                 : record
-                ? ['rgba(60,79,101,0.13)', 'rgba(60,79,101,0.042)']
+                ? ['rgba(60,79,101,0.117)', 'rgba(60,79,101,0.038)']
                 : isUnav
-                ? ['rgba(255,255,255,0.015)', 'rgba(255,255,255,0.008)']
+                ? ['rgba(255,255,255,0.014)', 'rgba(255,255,255,0.007)']
                 : [colors.rowBg, colors.rowBg];
 
               const borderCol = isCurrent
@@ -240,9 +241,10 @@ const s = StyleSheet.create({
   content: { padding: 24, paddingTop: 20, paddingBottom: 48 },
 
   title:   { fontSize: 36, marginBottom: 2 },
-  dateStr: { fontSize: 13, marginBottom: 24 },
+  dateStr: { fontSize: 13, marginBottom: 6 },
+  timeLayerLabel: { fontSize: 9, fontWeight: '700', letterSpacing: 2, color: 'rgba(255,255,255,0.18)', marginBottom: 20 },
 
-  hoursSection: { gap: 8, marginBottom: 44 }, // increased from 28 → 44 for M.Y.B.E.D. breathing room
+  hoursSection: { gap: 8, marginBottom: 52 },
   hourLabel:   { fontSize: 15, fontWeight: '700' },
   planSnippet: { fontSize: 11, marginTop: 2 },
   statusText:  { fontSize: 10, fontWeight: '600', letterSpacing: 0.5 },

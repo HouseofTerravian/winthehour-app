@@ -27,8 +27,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: 'rgba(60,79,101,0.24)', // ~40% reduced from base 0.4
-    opacity: 0.9,
+    borderColor: 'rgba(60,79,101,0.16)', // further reduced — HUD recedes behind arena
+    opacity: 0.82,
   },
   value: { fontSize: 24, fontWeight: '800', marginBottom: 4 },
   label: { fontSize: 9, fontWeight: '700', letterSpacing: 0.8, color: 'rgba(255,255,255,0.35)' },
