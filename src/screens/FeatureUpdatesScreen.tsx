@@ -14,6 +14,18 @@ type UpdateEntry = {
 
 const UPDATES: UpdateEntry[] = [
   {
+    version: '0.6.1',
+    date: '2026-02-21',
+    tag: 'REFINEMENT',
+    tagColor: Colors.steel,
+    items: [
+      'WTH! screen: HH:55 Reset Ritual block removed — arena breathes clean',
+      'Bottom nav icon system unified: all emoji replaced with geometric Unicode symbols',
+      'WTH! → ◔ (clock arc) · TODAY → ◉ (radiant) · TOMORROW → ▷ (forward) · NEXUS → ◎ (hub)',
+      'Consistent stroke weight across all 4 nav icons — no mixed emoji + vector',
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-02-21',
     tag: 'NAVIGATION',
