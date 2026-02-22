@@ -14,6 +14,40 @@ type UpdateEntry = {
 
 const UPDATES: UpdateEntry[] = [
   {
+    version: '0.5.3',
+    date: '2026-02-21',
+    tag: 'VISUAL',
+    tagColor: Colors.molten,
+    items: [
+      'Arena bg deepened to #040405 — pulls focus into the flow card',
+      'Top/bottom vignette overlays added to ArenaContainer (pointerEvents passthrough)',
+      'HudCard glow further reduced: border 0.16 alpha, opacity 0.82 — recedes behind arena',
+      'WTH! screen: 60M time-layer label added under subtitle',
+      'TODAY! screen: 24H time-layer label added under date; glow reduced ~10%; M.Y.B.E.D. spacing increased',
+      'Home screen: LIFETIME time-layer label added; stat card gradients and borders toned down',
+      'Home screen: AVAILABLE NOW badge removed from Morning Flow card',
+      'Flows screen: card border increased to 2px; morning gradient reduced; evening gold border intensified',
+      'Statistics: empty state "Win Hours to populate your graph." shown when no data',
+      'Rating block in WTH! loss flow: borders removed — reflection feel, auto-submits on tap',
+    ],
+  },
+  {
+    version: '0.5.2',
+    date: '2026-02-21',
+    tag: 'ARCHITECTURE',
+    tagColor: Colors.gold,
+    items: [
+      'Shared UI primitives: ArenaContainer, HudCard, EliteButton, MatteCard, Badge, SectionHeader',
+      'CheckInRecord schema: won → hour_result (\'win\'|\'loss\') + intensity_rating + loss_reason_text',
+      'Legacy check-in records auto-migrated on load — no data loss',
+      'WTH! flow restructured: ask → YES → plan | NO → loss_reason → rate',
+      'Rating auto-submits on tap — no confirm button needed',
+      'TODAY! hour rows converted to MatteCard with reduced gradient glow',
+      'ProfileScreen: stat pills (Streak/Hours Won/XP) removed — profile is emotional layer only',
+      'PartnerStore scaffold: placement types, tier visibility, priority resolution',
+    ],
+  },
+  {
     version: '0.5.1',
     date: '2026-02-20',
     tag: 'STRUCTURE',
